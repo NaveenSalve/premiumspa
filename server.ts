@@ -303,7 +303,9 @@ async function startServer() {
     }
   }
 
-  await seedInitialData();
+  await seedInitialData().catch((e) => {
+    console.error('[boot] seedInitialData failed (non-fatal):', e);
+  });
 
   const app = express();
   app.disable('x-powered-by');
@@ -361,6 +363,14 @@ async function startServer() {
   app.use('/api', (_req, res, next) => {
     res.setHeader('Cache-Control', 'no-store');
     next();
+  });
+
+  // Liveness probe for Railway/Render/etc. Lightweight, no auth, no DB query:
+  // a crash-free process with a working listener is all a platform health check
+  // needs. This is intentionally NOT part of /api (keeps /api fully auth-scoped
+  // and cache-controlled).
+  app.get('/health', (_req, res) => {
+    res.json({ status: 'ok' });
   });
 
   // ---- C2: Content-Type gate ----
@@ -1543,11 +1553,18 @@ async function startServer() {
     });
   }
 
-  // Bind 0.0.0.0 for Railway/Render/Fly.io; 127.0.0.1 for local Cloudflare tunnel.
-  const bindHost = process.env.NODE_ENV === 'production' && !process.env.APP_ORIGIN?.includes('localhost') ? '0.0.0.0' : '127.0.0.1';
+  // Bind 0.0.0.0 on any platform that injects PORT (Railway/Render/Fly.io);
+  // fall back to loopback for local dev / Cloudflare tunnel (no PORT env).
+  // Using process.env.PORT presence (not NODE_ENV) is deliberate: Railway does
+  // not always set NODE_ENV, and a loopback bind would make the public URL
+  // return "Application failed to respond".
+  const bindHost = process.env.PORT ? '0.0.0.0' : '127.0.0.1';
   app.listen(PORT, bindHost, () => {
     console.log(`Server running on http://${bindHost}:${PORT}`);
   });
 }
 
-startServer();
+startServer().catch((e) => {
+  console.error('[boot] FATAL: server failed to start:', e);
+  process.exit(1);
+});

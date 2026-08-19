@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://elated-rainfall-l9v0l.web.app/sitemap.xml

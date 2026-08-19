@@ -1,0 +1,6 @@
+{
+  "name": "Premium Spa & Home Wellness",
+  "description": "On-demand luxury home spa and wellness booking platform with certified therapists, real-time schedule management, and complete client administration.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

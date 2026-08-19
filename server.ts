@@ -40,6 +40,11 @@ const JWT_SECRET = (() => {
   return secret;
 })();
 const ADMIN_PIN = process.env.ADMIN_PIN;
+// Container platforms (Railway/Render/Fly.io) inject PORT at runtime. Trust it
+// verbatim; fall back to 3000 only for local dev / Cloudflare tunnel runs.
+// IS_CONTAINER is derived from the raw PORT env (non-empty string) so that a
+// deliberately-empty PORT never causes a loopback bind on a hosted deploy.
+const IS_CONTAINER = typeof process.env.PORT === 'string' && process.env.PORT.trim() !== '';
 const PORT = Number(process.env.PORT) || 3000;
 const TRAVEL_ADVANCE = 200;
 
@@ -1555,10 +1560,10 @@ async function startServer() {
 
   // Bind 0.0.0.0 on any platform that injects PORT (Railway/Render/Fly.io);
   // fall back to loopback for local dev / Cloudflare tunnel (no PORT env).
-  // Using process.env.PORT presence (not NODE_ENV) is deliberate: Railway does
-  // not always set NODE_ENV, and a loopback bind would make the public URL
+  // Using IS_CONTAINER (raw PORT presence) not NODE_ENV is deliberate: Railway
+  // does not always set NODE_ENV, and a loopback bind would make the public URL
   // return "Application failed to respond".
-  const bindHost = process.env.PORT ? '0.0.0.0' : '127.0.0.1';
+  const bindHost = IS_CONTAINER ? '0.0.0.0' : '127.0.0.1';
   app.listen(PORT, bindHost, () => {
     console.log(`Server running on http://${bindHost}:${PORT}`);
   });

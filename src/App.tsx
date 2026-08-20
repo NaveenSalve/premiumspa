@@ -12,7 +12,7 @@ import { TherapistsView } from './components/TherapistsView';
 import { BookingView } from './components/BookingView';
 import { AboutView } from './components/AboutView';
 import { MessageView } from './components/MessageView';
-import { Smartphone, Monitor, X } from 'lucide-react';
+import { X } from 'lucide-react';
 
 const AdminView = lazy(() => import('./components/AdminView').then((module) => ({ default: module.AdminView })));
 
@@ -75,12 +75,6 @@ async function fetchAllAdminPages(path: string): Promise<any[]> {
 export default function App() {
   const [activeTab, setActiveTab] = useState<MainTab>('home');
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
-  const [isMobileFrame, setIsMobileFrame] = useState<boolean>(() => {
-    if (typeof window !== 'undefined') {
-      return window.innerWidth < 768;
-    }
-    return false;
-  });
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const [services, setServices] = useState<SpaService[]>(INITIAL_SERVICES);
@@ -554,54 +548,17 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f5f4ee] flex flex-col items-center justify-start text-[#1b1c19] selection:bg-[#d5e8cf]">
-      {/* Top Banner Control Bar for Device View Toggling on Desktop */}
-      <div className="w-full bg-[#1b1c19] text-[#e4e2dd] py-1.5 px-4 text-xs hidden md:flex items-center justify-between border-b border-[#30312d]">
-        <div className="flex items-center space-x-2 font-serif">
-          <span className="w-2 h-2 rounded-full bg-[#22c55e] animate-pulse" />
-          <span>PREMIUM SPA & WELLNESS — AT YOUR DOORSTEP</span>
-        </div>
-        <div className="flex items-center space-x-3">
-          <span className="text-[10px] text-[#747871] uppercase tracking-wider">Device Mode:</span>
-          <button
-            onClick={() => setIsMobileFrame(true)}
-            className={`flex items-center space-x-1 px-2.5 py-1 rounded-md transition-colors ${
-              isMobileFrame ? 'bg-[#52634f] text-white' : 'text-[#747871] hover:text-white'
-            }`}
-          >
-            <Smartphone className="w-3.5 h-3.5" />
-            <span>Mobile Canvas</span>
-          </button>
-          <button
-            onClick={() => setIsMobileFrame(false)}
-            className={`flex items-center space-x-1 px-2.5 py-1 rounded-md transition-colors ${
-              !isMobileFrame ? 'bg-[#52634f] text-white' : 'text-[#747871] hover:text-white'
-            }`}
-          >
-            <Monitor className="w-3.5 h-3.5" />
-            <span>Full Desktop</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Main Container */}
-      <div
-        className={`w-full transition-all duration-300 ${
-          isMobileFrame
-            ? 'max-w-md min-h-screen my-0 md:my-4 bg-[#fbf9f4] shadow-2xl md:rounded-[36px] overflow-hidden border-0 md:border-8 md:border-[#1b1c19] relative'
-            : 'max-w-7xl min-h-screen bg-[#fbf9f4] shadow-md relative mx-auto'
-        }`}
-      >
-        {/* Sticky Header - hidden on Admin view */}
-        {activeTab !== 'admin' && (
-          <Header
-            activeTab={activeTab}
-            setActiveTab={handleTabChange}
-            isAdmin={isAdmin}
-            setIsAdmin={setIsAdmin}
-            contactSettings={contactSettings}
-          />
-        )}
+    <div className="min-h-screen bg-[#fbf9f4] text-[#1b1c19] selection:bg-[#d5e8cf] relative">
+      {/* Sticky Header - hidden on Admin view */}
+      {activeTab !== 'admin' && (
+        <Header
+          activeTab={activeTab}
+          setActiveTab={handleTabChange}
+          isAdmin={isAdmin}
+          setIsAdmin={setIsAdmin}
+          contactSettings={contactSettings}
+        />
+      )}
 
         {/* Luxury Glassmorphism Toast Alert Banner */}
         {toastMessage && (
@@ -724,7 +681,6 @@ export default function App() {
             isAdmin={isAdmin}
           />
         )}
-      </div>
     </div>
   );
 }

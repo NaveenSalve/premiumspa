@@ -28,6 +28,19 @@ import {
 
 dotenv.config();
 
+// ---- Startup diagnostics: unhandled rejections / exceptions ----
+// A hung startup after the last console.log but before app.listen()'s
+// callback fires is almost always an unhandled promise rejection or a
+// synchronous throw swallowing the stack. Log loudly instead of silently
+// stalling the event loop so the real cause shows up in deploy logs.
+process.on('unhandledRejection', (reason) => {
+  console.error('[boot] UNHANDLED PROMISE REJECTION (this can silently hang startup):', reason);
+});
+process.on('uncaughtException', (err) => {
+  console.error('[boot] UNCAUGHT EXCEPTION — exiting so the platform can restart cleanly:', err);
+  process.exit(1);
+});
+
 const JWT_SECRET = (() => {
   const secret = process.env.JWT_SECRET;
   if (!secret) {
@@ -293,6 +306,7 @@ async function seedInitialData() {
 }
 
 async function startServer() {
+  console.log('[boot] startServer() called — beginning migrations');
   // Apply schema migrations on boot so fresh deployments are not broken
   try {
     await migrate(db, { migrationsFolder: path.join(process.cwd(), 'drizzle') });
@@ -301,9 +315,11 @@ async function startServer() {
     console.error('[db] FAILED to apply migrations — database may be unreachable or not provisioned. Check SQL_HOST/SQL_USER/SQL_PASSWORD/SQL_DB_NAME.', e);
   }
 
+  console.log('[boot] migrations step complete — beginning seedInitialData()');
   await seedInitialData().catch((e) => {
     console.error('[boot] seedInitialData failed (non-fatal):', e);
   });
+  console.log('[boot] seedInitialData() complete — building Express app');
 
   const app = express();
   app.disable('x-powered-by');
@@ -1532,12 +1548,14 @@ async function startServer() {
   });
 
   // Serve Vite or Static build
+  console.log(`[boot] setting up ${process.env.NODE_ENV !== 'production' ? 'Vite dev' : 'static production'} middleware`);
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: 'spa',
     });
     app.use(vite.middlewares);
+    console.log('[boot] Vite dev middleware attached');
   } else {
     // F-02: backend bundle / sourcemaps / source files must never be served.
     // Hard-blocked before static serving even if a stale file exists in dist/.
@@ -1557,6 +1575,7 @@ async function startServer() {
     app.get(/.*/, (_req, res) => {
       res.sendFile(path.join(distPath, 'index.html'));
     });
+    console.log('[boot] static production middleware attached');
   }
 
   // Bind 0.0.0.0 on any platform that injects PORT (Railway/Render/Fly.io);
@@ -1565,12 +1584,47 @@ async function startServer() {
   // does not always set NODE_ENV, and a loopback bind would make the public URL
   // return "Application failed to respond".
   const bindHost = IS_CONTAINER ? '0.0.0.0' : '127.0.0.1';
-  app.listen(PORT, bindHost, () => {
+
+  console.log(`[boot] calling app.listen(${PORT}, ${bindHost})...`);
+
+  // ---- Startup timeout guard ----
+  // If the listen callback never fires (e.g. the event loop is blocked by a
+  // stray unresolved promise or a hung synchronous call somewhere above),
+  // the process would otherwise sit there forever, logging nothing further,
+  // while the platform's health checks fail with connection-refused. Fail
+  // loudly instead so the deploy is visibly broken rather than silently hung.
+  const startupTimeoutMs = 5000;
+  const startupTimeout = setTimeout(() => {
+    console.error(
+      `[boot] FATAL: server did not start listening within ${startupTimeoutMs}ms of calling app.listen(). ` +
+        'The event loop was likely blocked by an unresolved promise or hung call before this point. Exiting so the platform can restart/retry.'
+    );
+    process.exit(1);
+  }, startupTimeoutMs);
+  // Do not let this timer itself keep the process alive if listen() never
+  // resolves for a benign reason (it's cleared below on success anyway).
+  startupTimeout.unref();
+
+  const server = app.listen(PORT, bindHost, () => {
+    clearTimeout(startupTimeout);
+    console.log(`[boot] app.listen() callback fired — server is bound.`);
     console.log(`Server running on http://${bindHost}:${PORT}`);
   });
+
+  server.on('error', (err) => {
+    clearTimeout(startupTimeout);
+    console.error(`[boot] FATAL: app.listen() emitted an error and never bound to ${bindHost}:${PORT}:`, err);
+    process.exit(1);
+  });
+
+  console.log('[boot] startServer() reached end of function body (listen is async; waiting for callback/error).');
 }
 
-startServer().catch((e) => {
-  console.error('[boot] FATAL: server failed to start:', e);
-  process.exit(1);
-});
+startServer()
+  .then(() => {
+    console.log('[boot] startServer() promise resolved — startup sequence complete.');
+  })
+  .catch((e) => {
+    console.error('[boot] FATAL: server failed to start:', e);
+    process.exit(1);
+  });

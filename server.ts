@@ -1,4 +1,5 @@
 import express from 'express';
+import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import cookieParser from 'cookie-parser';
@@ -293,18 +294,6 @@ async function seedInitialData() {
 }
 
 async function startServer() {
-  // Apply schema migrations on boot so fresh deployments are not broken
-  try {
-    await migrate(db, { migrationsFolder: path.join(process.cwd(), 'drizzle') });
-    console.log('[db] migrations applied');
-  } catch (e) {
-    console.error('[db] FAILED to apply migrations — database may be unreachable or not provisioned. Check SQL_HOST/SQL_USER/SQL_PASSWORD/SQL_DB_NAME.', e);
-  }
-
-  await seedInitialData().catch((e) => {
-    console.error('[boot] seedInitialData failed (non-fatal):', e);
-  });
-
   const app = express();
   app.disable('x-powered-by');
   app.set('trust proxy', parseTrustProxySetting());
@@ -1531,8 +1520,12 @@ async function startServer() {
     res.status(404).json({ error: 'Not found.' });
   });
 
-  // Serve Vite or Static build
-  if (process.env.NODE_ENV !== 'production') {
+  // Serve Vite in dev or Static build in production
+  const isProduction =
+    process.env.NODE_ENV === 'production' ||
+    fs.existsSync(path.join(process.cwd(), 'dist', 'index.html'));
+
+  if (!isProduction) {
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: 'spa',
@@ -1559,14 +1552,23 @@ async function startServer() {
     });
   }
 
-  // Bind 0.0.0.0 on any platform that injects PORT (Railway/Render/Fly.io);
-  // fall back to loopback for local dev / Cloudflare tunnel (no PORT env).
-  // Using IS_CONTAINER (raw PORT presence) not NODE_ENV is deliberate: Railway
-  // does not always set NODE_ENV, and a loopback bind would make the public URL
-  // return "Application failed to respond".
-  const bindHost = IS_CONTAINER ? '0.0.0.0' : '127.0.0.1';
+  const bindHost = '0.0.0.0';
   app.listen(PORT, bindHost, () => {
     console.log(`Server running on http://${bindHost}:${PORT}`);
+
+    // Run DB migrations and seed asynchronously in background AFTER port is listening
+    (async () => {
+      try {
+        await migrate(db, { migrationsFolder: path.join(process.cwd(), 'drizzle') });
+        console.log('[db] migrations applied');
+      } catch (e) {
+        console.error('[db] FAILED to apply migrations — database may be unreachable or not provisioned.', e);
+      }
+
+      await seedInitialData().catch((e) => {
+        console.error('[boot] seedInitialData failed (non-fatal):', e);
+      });
+    })();
   });
 }
 

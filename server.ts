@@ -1579,7 +1579,9 @@ export async function startServer() {
   return app;
 }
 
-startServer().catch((e) => {
-  console.error('[boot] FATAL: server failed to start:', e);
-  process.exit(1);
-});
+if (!process.env.NETLIFY) {
+  startServer().catch((e) => {
+    console.error('[boot] FATAL: server failed to start:', e);
+    process.exit(1);
+  });
+}

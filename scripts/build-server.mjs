@@ -16,7 +16,7 @@ if (fs.existsSync('netlify/functions/api.ts')) {
     entryPoints: ['netlify/functions/api.ts'],
     bundle: true,
     platform: 'node',
-    format: 'cjs',
+    format: 'esm',
     packages: 'external',
     outfile: 'dist-functions/api.js',
     logLevel: 'info',

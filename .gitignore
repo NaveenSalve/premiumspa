@@ -8,3 +8,6 @@ backups/
 *.log
 .env*
 !.env.example
+
+# Local Netlify folder
+.netlify

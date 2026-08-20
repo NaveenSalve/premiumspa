@@ -2,6 +2,20 @@
   command = "npm run build"
   publish = "dist"
 
+# The app has its own combined dev server (`npm run dev`, tsx + Vite
+# middleware) and isn't a plain Vite project, so let Netlify Dev serve the
+# built `dist/` output plus functions instead of guessing a framework command.
+[dev]
+  framework = "#static"
+  publish = "dist"
+
+# Send API calls to the serverless function running the Express backend,
+# before the SPA catch-all below can swallow them.
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200
+
 # Client-side routing for Single Page Application (React SPA)
 [[redirects]]
   from = "/*"

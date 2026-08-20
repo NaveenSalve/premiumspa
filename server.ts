@@ -293,7 +293,7 @@ async function seedInitialData() {
   }
 }
 
-async function startServer() {
+export async function createApp() {
   const app = express();
   app.disable('x-powered-by');
   app.set('trust proxy', parseTrustProxySetting());
@@ -1520,6 +1520,12 @@ async function startServer() {
     res.status(404).json({ error: 'Not found.' });
   });
 
+  return app;
+}
+
+export async function startServer() {
+  const app = await createApp();
+
   // Serve Vite in dev or Static build in production
   const isProduction =
     process.env.NODE_ENV === 'production' ||
@@ -1570,6 +1576,7 @@ async function startServer() {
       });
     })();
   });
+  return app;
 }
 
 startServer().catch((e) => {

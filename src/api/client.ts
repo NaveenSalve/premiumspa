@@ -53,6 +53,12 @@ export async function api<T = any>(path: string, options: RequestOptions = {}): 
     }
     throw new ApiError(message, res.status);
   }
+
+  const contentType = res.headers.get('content-type') || '';
+  if (!contentType.includes('application/json') && !contentType.includes('json')) {
+    throw new ApiError(`Unexpected response format from server`, res.status);
+  }
+
   return res.json() as Promise<T>;
 }
 

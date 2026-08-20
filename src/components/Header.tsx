@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { MainTab, ContactSettings } from '../types';
-import { ShieldCheck, X, Home, CalendarCheck, User, MessageSquare } from 'lucide-react';
+import { X, Home, CalendarCheck, User, MessageSquare } from 'lucide-react';
 
 const GoldenMonogramLogo: React.FC<{ size?: number; className?: string }> = ({
   size = 36,
@@ -64,16 +64,12 @@ const LotusServiceIcon: React.FC<{ size?: number; strokeWidth?: number; classNam
 interface HeaderProps {
   activeTab: MainTab;
   setActiveTab: (tab: MainTab) => void;
-  isAdmin: boolean;
-  setIsAdmin: (isAdmin: boolean) => void;
   contactSettings?: ContactSettings;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   activeTab,
   setActiveTab,
-  isAdmin,
-  setIsAdmin,
   contactSettings = {
     whatsappNumber: '6260104019',
     callNumber: '6260104019',
@@ -262,32 +258,6 @@ export const Header: React.FC<HeaderProps> = ({
                 })}
               </nav>
 
-              {/* Admin Console Switch */}
-              <div className="pt-4 border-t border-[#e9e8e3]">
-                <button
-                  onClick={() => {
-                    const nextAdmin = !isAdmin;
-                    setIsAdmin(nextAdmin);
-                    if (nextAdmin) handleNavClick('admin');
-                    else if (activeTab === 'admin') handleNavClick('home');
-                  }}
-                  className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
-                    isAdmin
-                      ? 'bg-[#1b1c19] text-white border-[#1b1c19]'
-                      : 'bg-[#efeee8] text-[#52634f] border-[#c4c8bf] hover:bg-[#e4e2dd]'
-                  }`}
-                >
-                  <div className="flex items-center space-x-2">
-                    <ShieldCheck className="w-4 h-4 text-[#52634f]" />
-                    <span>Management Console</span>
-                  </div>
-                  <span className={`text-[10px] px-2 py-0.5 rounded-full uppercase font-bold ${
-                    isAdmin ? 'bg-[#d5e8cf] text-[#3b4b38]' : 'bg-white text-[#747871]'
-                  }`}>
-                    {isAdmin ? 'ACTIVE' : 'OFF'}
-                  </span>
-                </button>
-              </div>
             </div>
 
             {/* Drawer Footer */}

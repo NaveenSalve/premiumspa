@@ -72,9 +72,18 @@ async function fetchAllAdminPages(path: string): Promise<any[]> {
   return all;
 }
 
+const getInitialTab = (): MainTab => {
+  if (typeof window !== 'undefined') {
+    const path = window.location.pathname.toLowerCase();
+    if (path === '/admin' || path === '/admin/' || path.startsWith('/admin')) {
+      return 'admin';
+    }
+  }
+  return 'home';
+};
+
 export default function App() {
-  const [activeTab, setActiveTab] = useState<MainTab>('home');
-  const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  const [activeTab, setActiveTab] = useState<MainTab>(getInitialTab);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const [services, setServices] = useState<SpaService[]>(INITIAL_SERVICES);
@@ -98,6 +107,20 @@ export default function App() {
       return () => clearTimeout(timer);
     }
   }, [toastMessage]);
+
+  // Keep URL in sync with tab and handle browser popstate (back/forward)
+  useEffect(() => {
+    const handlePopState = () => {
+      const path = window.location.pathname.toLowerCase();
+      if (path === '/admin' || path === '/admin/' || path.startsWith('/admin')) {
+        setActiveTab('admin');
+      } else {
+        setActiveTab('home');
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   // Scroll to top whenever active tab changes
   useEffect(() => {
@@ -517,21 +540,32 @@ export default function App() {
     }
   };
 
+  const changeTab = useCallback((targetTab: MainTab) => {
+    setActiveTab(targetTab);
+    if (typeof window !== 'undefined') {
+      if (targetTab === 'admin') {
+        if (window.location.pathname !== '/admin') {
+          window.history.pushState(null, '', '/admin');
+        }
+      } else {
+        if (window.location.pathname === '/admin' || window.location.pathname === '/admin/') {
+          window.history.pushState(null, '', '/');
+        }
+      }
+    }
+  }, []);
+
   // Navigation handler
   const handleTabChange = (tab: MainTab) => {
-    if (tab === 'admin' && !adminAuthed) {
-      setActiveTab('admin');
-      return;
-    }
     if (tab === 'booking') {
       if (selectedTherapist || selectedService) {
-        setActiveTab('booking');
+        changeTab('booking');
       } else {
-        setActiveTab('therapists');
+        changeTab('therapists');
         setToastMessage('Please select a therapist to book your massage.');
       }
     } else {
-      setActiveTab(tab);
+      changeTab(tab);
     }
   };
 
@@ -554,8 +588,6 @@ export default function App() {
         <Header
           activeTab={activeTab}
           setActiveTab={handleTabChange}
-          isAdmin={isAdmin}
-          setIsAdmin={setIsAdmin}
           contactSettings={contactSettings}
         />
       )}
@@ -678,7 +710,6 @@ export default function App() {
           <BottomNav
             activeTab={activeTab}
             setActiveTab={handleTabChange}
-            isAdmin={isAdmin}
           />
         )}
     </div>

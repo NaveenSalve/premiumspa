@@ -7,6 +7,7 @@ import tile1Img from '../assets/images/tile_oil_candles_1786019003018.jpg';
 import tile2Img from '../assets/images/tile_back_massage_1786019026262.jpg';
 import tile3Img from '../assets/images/tile_herbal_compress_1786019046167.jpg';
 import tile4Img from '../assets/images/tile_foot_bath_1786019068814.jpg';
+import { HeroImage, CardImage, ResponsiveImage, ThumbnailImage, generatePreloadLinks } from './ResponsiveImage';
 
 interface HomeViewProps {
   services: SpaService[];
@@ -92,17 +93,24 @@ export const HomeView: React.FC<HomeViewProps> = ({
   };
 
   return (
-    <div className="pb-28 space-y-10 animate-fade-in">
-      {/* HERO SECTION */}
-      <section className="relative min-h-[500px] md:min-h-[560px] lg:min-h-[620px] rounded-b-[36px] overflow-hidden shadow-md flex flex-col justify-end p-6 md:p-12 lg:p-16 text-center text-white">
-        <img
-          src={heroImageDesktop}
-          alt="World-Class Spa Delivered"
-          referrerPolicy="no-referrer"
-          className="absolute inset-0 w-full h-full object-cover brightness-[0.82] contrast-[1.05] transition-transform duration-1000 hover:scale-105"
-        />
-        {/* Warm Dark Gradient Overlay for Maximum Readability & Contrast */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#121812] via-[#121812]/55 to-[#121812]/20 md:bg-gradient-to-t md:from-[#121812]/90 md:via-[#121812]/45 md:to-transparent" />
+    <>
+      {/* Preload critical hero images */}
+      {generatePreloadLinks([
+        { src: heroImageDesktop, as: 'image' },
+        { src: contactSettings?.brandLogoUrl || '', as: 'image' },
+      ])}
+      
+      <div className="pb-28 space-y-10 animate-fade-in">
+        {/* HERO SECTION */}
+        <section className="relative min-h-[500px] md:min-h-[560px] lg:min-h-[620px] rounded-b-[36px] overflow-hidden shadow-md flex flex-col justify-end p-6 md:p-12 lg:p-16 text-center text-white">
+          <HeroImage
+            src={heroImageDesktop}
+            alt="World-Class Spa Delivered"
+            className="absolute inset-0 w-full h-full object-cover brightness-[0.82] contrast-[1.05] transition-transform duration-1000 hover:scale-105"
+            placeholder={heroSpaImage}
+          />
+          {/* Warm Dark Gradient Overlay for Maximum Readability & Contrast */}
+          <div className="absolute inset-0 bg-gradient-to-t from-[#121812] via-[#121812]/55 to-[#121812]/20 md:bg-gradient-to-t md:from-[#121812]/90 md:via-[#121812]/45 md:to-transparent" />
 
         <div className="relative z-10 max-w-md md:max-w-2xl lg:max-w-3xl mx-auto flex flex-col items-center justify-center space-y-4 pb-2 text-center">
           {/* AT YOUR DOORSTEP */}
@@ -158,10 +166,11 @@ export const HomeView: React.FC<HomeViewProps> = ({
           {/* Card 1: Home Service */}
           <div className="w-[180px] h-[291px] flex-shrink-0 bg-white border border-[#ABABAB] rounded-[15px] p-[20px] flex flex-col justify-center items-center gap-[13px] shadow-2xs hover:border-[#52634F] hover:shadow-md transition-all duration-300">
             <div className="w-[136px] h-[116px] rounded-lg overflow-hidden bg-[#efeee8] flex-shrink-0">
-              <img
+              <CardImage
                 src={contactSettings.experienceHomeImageUrl || 'https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?auto=format&fit=crop&w=800&q=80'}
                 alt="Home Service"
-                className="w-full h-full object-cover"
+                className="w-full h-full"
+                aspectRatio="landscape"
               />
             </div>
             <div className="w-[136px] h-[122px] flex flex-col justify-between items-center text-center">
@@ -188,10 +197,11 @@ export const HomeView: React.FC<HomeViewProps> = ({
           {/* Card 2: Hotel Service */}
           <div className="w-[180px] h-[291px] flex-shrink-0 bg-white border border-[#ABABAB] rounded-[15px] p-[20px] flex flex-col justify-center items-center gap-[13px] shadow-2xs hover:border-[#52634F] hover:shadow-md transition-all duration-300">
             <div className="w-[136px] h-[116px] rounded-lg overflow-hidden bg-[#efeee8] flex-shrink-0">
-              <img
+              <CardImage
                 src={contactSettings.experienceHotelImageUrl || 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=800&q=80'}
                 alt="Hotel Service"
-                className="w-full h-full object-cover"
+                className="w-full h-full"
+                aspectRatio="landscape"
               />
             </div>
             <div className="w-[136px] h-[122px] flex flex-col justify-between items-center text-center">
@@ -218,10 +228,11 @@ export const HomeView: React.FC<HomeViewProps> = ({
           {/* Card 3: Book Therapist */}
           <div className="w-[180px] h-[291px] flex-shrink-0 bg-white border border-[#ABABAB] rounded-[15px] p-[20px] flex flex-col justify-center items-center gap-[13px] shadow-2xs hover:border-[#52634F] hover:shadow-md transition-all duration-300">
             <div className="w-[136px] h-[116px] rounded-lg overflow-hidden bg-[#efeee8] flex-shrink-0">
-              <img
+              <CardImage
                 src={contactSettings.experienceTherapistImageUrl || 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=800&q=80'}
                 alt="Book Therapist"
-                className="w-full h-full object-cover"
+                className="w-full h-full"
+                aspectRatio="landscape"
               />
             </div>
             <div className="w-[136px] h-[122px] flex flex-col justify-between items-center text-center">
@@ -255,10 +266,11 @@ export const HomeView: React.FC<HomeViewProps> = ({
           >
             {/* Image Block */}
             <div className="w-full h-52 overflow-hidden bg-stone-100 relative flex-shrink-0">
-              <img
+              <CardImage
                 src={contactSettings.experienceHomeImageUrl || 'https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?auto=format&fit=crop&w=800&q=80'}
                 alt="Home Service"
                 className="w-full h-52 object-cover group-hover:scale-105 transition-transform duration-500"
+                aspectRatio="landscape"
               />
               <div className="absolute inset-0 bg-stone-900/5 group-hover:bg-transparent transition-colors duration-300" />
             </div>
@@ -295,10 +307,11 @@ export const HomeView: React.FC<HomeViewProps> = ({
           >
             {/* Image Block */}
             <div className="w-full h-52 overflow-hidden bg-stone-100 relative flex-shrink-0">
-              <img
+              <CardImage
                 src={contactSettings.experienceHotelImageUrl || 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=800&q=80'}
                 alt="Hotel Service"
                 className="w-full h-52 object-cover group-hover:scale-105 transition-transform duration-500"
+                aspectRatio="landscape"
               />
               <div className="absolute inset-0 bg-stone-900/5 group-hover:bg-transparent transition-colors duration-300" />
             </div>
@@ -335,10 +348,11 @@ export const HomeView: React.FC<HomeViewProps> = ({
           >
             {/* Image Block */}
             <div className="w-full h-52 overflow-hidden bg-stone-100 relative flex-shrink-0">
-              <img
+              <CardImage
                 src={contactSettings.experienceTherapistImageUrl || 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=800&q=80'}
                 alt="Book Therapist"
                 className="w-full h-52 object-cover group-hover:scale-105 transition-transform duration-500"
+                aspectRatio="landscape"
               />
               <div className="absolute inset-0 bg-stone-900/5 group-hover:bg-transparent transition-colors duration-300" />
             </div>
@@ -466,10 +480,11 @@ export const HomeView: React.FC<HomeViewProps> = ({
             <div className="space-y-3 w-full flex flex-col items-center md:space-y-0">
               {/* Border & Image Container */}
               <div className="w-full h-[160px] sm:h-[190px] md:h-48 border border-[#C5C7C1]/30 md:border-none rounded-xl md:rounded-none overflow-hidden bg-[#efeee8] md:bg-stone-100 relative flex-shrink-0">
-                <img
+                <CardImage
                   src="https://images.unsplash.com/photo-1515377905703-c4788e51af15?auto=format&fit=crop&w=800&q=80"
                   alt="Swedish Full Body Massage"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  aspectRatio="landscape"
                 />
                 <button
                   type="button"
@@ -526,10 +541,11 @@ export const HomeView: React.FC<HomeViewProps> = ({
           >
             <div className="space-y-3 w-full flex flex-col items-center md:space-y-0">
               <div className="w-full h-[160px] sm:h-[190px] md:h-48 border border-[#C5C7C1]/30 md:border-none rounded-xl md:rounded-none overflow-hidden bg-[#efeee8] md:bg-stone-100 relative flex-shrink-0">
-                <img
+                <CardImage
                   src={tile2Img}
                   alt="Deep Tissue Massage"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  aspectRatio="landscape"
                 />
                 <button
                   type="button"
@@ -584,10 +600,11 @@ export const HomeView: React.FC<HomeViewProps> = ({
           >
             <div className="space-y-3 w-full flex flex-col items-center md:space-y-0">
               <div className="w-full h-[160px] sm:h-[190px] md:h-48 border border-[#C5C7C1]/30 md:border-none rounded-xl md:rounded-none overflow-hidden bg-[#efeee8] md:bg-stone-100 relative flex-shrink-0">
-                <img
+                <CardImage
                   src={tile1Img}
                   alt="Aromatherapy Massage"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  aspectRatio="landscape"
                 />
                 <button
                   type="button"
@@ -700,10 +717,11 @@ export const HomeView: React.FC<HomeViewProps> = ({
           >
             <div className="space-y-3 w-full flex flex-col items-center md:space-y-0">
               <div className="w-full h-[160px] sm:h-[190px] md:h-48 border border-[#C5C7C1]/30 md:border-none rounded-xl md:rounded-none overflow-hidden bg-[#efeee8] md:bg-stone-100 relative flex-shrink-0">
-                <img
+                <CardImage
                   src={tile3Img}
                   alt="Reiki Therapy"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  aspectRatio="landscape"
                 />
                 <button
                   type="button"
@@ -758,10 +776,11 @@ export const HomeView: React.FC<HomeViewProps> = ({
           >
             <div className="space-y-2 sm:space-y-3 w-full flex flex-col items-center md:space-y-0">
               <div className="w-full h-[120px] sm:h-[190px] md:h-48 border border-[#C5C7C1]/30 md:border-none rounded-xl md:rounded-none overflow-hidden bg-[#efeee8] md:bg-stone-100 relative flex-shrink-0">
-                <img
+                <CardImage
                   src={tile4Img}
                   alt="Foot Reflexology"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  aspectRatio="landscape"
                 />
                 <button
                   type="button"
@@ -845,9 +864,10 @@ export const HomeView: React.FC<HomeViewProps> = ({
               >
                 {/* Avatar Image with Favorite Heart Overlay */}
                 <div className="relative w-full aspect-square rounded-[12px] sm:rounded-[16px] overflow-hidden bg-[#efeee8] flex-shrink-0">
-                  <img
+                  <ThumbnailImage
                     src={therapist.avatarUrl}
                     alt={therapist.name}
+                    size={200}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
                   {/* Favorite Heart Button */}
@@ -937,10 +957,13 @@ export const HomeView: React.FC<HomeViewProps> = ({
               transform: 'rotate(-179.5deg)',
             }}
           >
-            <img
+            <ResponsiveImage
               src={tile1Img}
               alt="Spa oils and candles"
+              width={400}
+              height={300}
               className="w-full h-full object-cover"
+              sizes="400px"
               style={{ transform: 'rotate(-179.5deg)' }}
             />
           </div>
@@ -953,10 +976,13 @@ export const HomeView: React.FC<HomeViewProps> = ({
               transform: 'scaleY(-1)',
             }}
           >
-            <img
+            <ResponsiveImage
               src={tile2Img}
               alt="Relaxing back massage"
+              width={400}
+              height={300}
               className="w-full h-full object-cover"
+              sizes="400px"
               style={{ transform: 'scaleY(-1)' }}
             />
           </div>
@@ -969,10 +995,13 @@ export const HomeView: React.FC<HomeViewProps> = ({
               transform: 'scaleX(-1)',
             }}
           >
-            <img
+            <ResponsiveImage
               src={tile3Img}
               alt="Herbal compress therapy"
+              width={400}
+              height={300}
               className="w-full h-full object-cover"
+              sizes="400px"
               style={{ transform: 'scaleX(-1)' }}
             />
           </div>
@@ -985,10 +1014,13 @@ export const HomeView: React.FC<HomeViewProps> = ({
               transform: 'rotate(0.04deg)',
             }}
           >
-            <img
+            <ResponsiveImage
               src={tile4Img}
               alt="Flower foot bath ritual"
+              width={400}
+              height={300}
               className="w-full h-full object-cover"
+              sizes="400px"
             />
           </div>
         </div>
@@ -1373,7 +1405,12 @@ export const HomeView: React.FC<HomeViewProps> = ({
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
                         <div className="w-12 h-12 rounded-xl overflow-hidden bg-[#efeee8] border border-[#e9e8e3] flex-shrink-0">
-                          <img src={therapist.avatarUrl} alt={therapist.name} className="w-full h-full object-cover" />
+                          <ThumbnailImage
+                            src={therapist.avatarUrl}
+                            alt={therapist.name}
+                            size={48}
+                            className="w-full h-full object-cover"
+                          />
                         </div>
                         <div>
                           <div className="flex items-center space-x-1.5">
@@ -1431,5 +1468,6 @@ export const HomeView: React.FC<HomeViewProps> = ({
         </div>
       )}
     </div>
-  );
+  </>
+);
 };

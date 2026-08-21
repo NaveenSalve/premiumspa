@@ -11,6 +11,31 @@ export const siteSettings = pgTable('site_settings', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
+// Image metadata — stores Supabase Storage file info and generated variants.
+// Only URLs and metadata are stored in DB; actual files live in Supabase Storage.
+export const imageAssets = pgTable('image_assets', {
+  id: text('id').primaryKey(),
+  originalName: text('original_name').notNull(),
+  mimeType: text('mime_type').notNull(),
+  size: integer('size').notNull(),
+  width: integer('width'),
+  height: integer('height'),
+  // Storage paths/keys in Supabase Storage
+  storagePath: text('storage_path').notNull(), // e.g., "services/srv-abc123/original.webp"
+  bucket: text('bucket').default('images').notNull(),
+  // Generated variant URLs (WebP/AVIF, different sizes)
+  variants: text('variants').notNull(), // JSON: { thumbnail: {...}, card: {...}, full: {...} }
+  // Entity association for cleanup tracking
+  entityType: text('entity_type'), // 'service' | 'therapist' | 'site_setting' | 'hero'
+  entityId: text('entity_id'),
+  entityField: text('entity_field'), // which field on the entity (e.g., 'image', 'avatarUrl', 'heroDesktopImageUrl')
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => [
+  index('idx_image_assets_entity').on(table.entityType, table.entityId),
+  index('idx_image_assets_created_at').on(table.createdAt),
+]);
+
 export const adminUsers = pgTable('admin_users', {
   id: text('id').primaryKey(),
   username: text('username').notNull().unique(),

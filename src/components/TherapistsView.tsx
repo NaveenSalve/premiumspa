@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { Therapist, MainTab, ContactSettings } from '../types';
 import { Heart, Star, ShieldCheck, X, ThumbsUp, Sparkles, UserCheck, ExternalLink } from 'lucide-react';
 import { StarRating } from './StarRating';
+import { ThumbnailImage, CardImage } from './ResponsiveImage';
 
 interface TherapistsViewProps {
   therapists: Therapist[];
@@ -134,10 +135,11 @@ export const TherapistsView: React.FC<TherapistsViewProps> = ({
       >
         {/* Avatar Image with Favorite Heart Overlay */}
         <div className="relative w-full aspect-square rounded-[12px] sm:rounded-[16px] overflow-hidden bg-[#efeee8] flex-shrink-0">
-          <img
+          <CardImage
             src={therapist.avatarUrl}
             alt={therapist.name}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            aspectRatio="square"
           />
           {/* Favorite Heart Button */}
           <button
@@ -305,10 +307,11 @@ export const TherapistsView: React.FC<TherapistsViewProps> = ({
               {/* Profile Header */}
               <div className="flex gap-3 sm:gap-4 items-center pr-10 pt-1">
                 <div className="w-20 h-20 rounded-2xl overflow-hidden bg-[#efeee8] flex-shrink-0 border border-[#e9e8e3]">
-                  <img
+                  <CardImage
                     src={profileTherapist.avatarUrl}
                     alt={profileTherapist.name}
                     className="w-full h-full object-cover"
+                    aspectRatio="square"
                   />
                 </div>
                 <div className="space-y-1 min-w-0">

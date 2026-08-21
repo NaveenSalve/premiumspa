@@ -1,4 +1,7 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://elated-rainfall-l9v0l.web.app/sitemap.xml
+Disallow: /admin
+Disallow: /api/
+
+Sitemap: https://www.premiumspa.online/sitemap.xml

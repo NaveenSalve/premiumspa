@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import cookieParser from 'cookie-parser';
+import multer from 'multer';
 import { rateLimit, ipKeyGenerator } from 'express-rate-limit';
 import { createServer as createViteServer } from 'vite';
 import jwt from 'jsonwebtoken';
@@ -21,11 +22,13 @@ import {
   adminNotifications,
   adminUsers,
   siteSettings,
+  imageAssets,
 } from './src/db/schema.ts';
 import {
   INITIAL_SERVICES,
   INITIAL_THERAPISTS,
 } from './src/data/mockData.ts';
+import { uploadAndProcessImage, deleteImageAsset, deleteImagesByEntity, getImageAssetsByEntity } from './src/lib/image-service.ts';
 
 dotenv.config();
 
@@ -725,6 +728,104 @@ export async function createApp() {
       return res.json({ success: true, sessionRevoked: true });
     } catch (e: any) {
       return fail(res, e, 'POST /api/admin/change-pin');
+    }
+  });
+
+  // Multer configuration for image uploads (memory storage for processing)
+  const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: {
+      fileSize: 10 * 1024 * 1024, // 10MB
+      files: 1,
+    },
+    fileFilter: (_req, file, cb) => {
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/avif'];
+      if (allowedTypes.includes(file.mimetype)) {
+        cb(null, true);
+      } else {
+        cb(new Error('Invalid file type. Only JPEG, PNG, WebP, and AVIF are allowed.'));
+      }
+    },
+  });
+
+  // Image Upload Endpoints
+  app.post('/api/admin/images/upload', requireAdminRole, upload.single('image'), async (req: any, res: any) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: 'No image file provided.' });
+      }
+      
+      const { entityType, entityId, entityField, imageType } = req.body;
+      
+      if (!entityType || !entityId || !entityField) {
+        return res.status(400).json({ error: 'entityType, entityId, and entityField are required.' });
+      }
+      
+      const validEntityTypes = ['service', 'therapist', 'site_setting', 'hero'];
+      if (!validEntityTypes.includes(entityType)) {
+        return res.status(400).json({ error: 'Invalid entityType. Must be one of: service, therapist, site_setting, hero' });
+      }
+      
+      const result = await uploadAndProcessImage({
+        file: req.file.buffer,
+        originalName: req.file.originalname,
+        mimeType: req.file.mimetype,
+        entityType,
+        entityId,
+        entityField,
+        imageType,
+      });
+      
+      return res.json({
+        success: true,
+        asset: result.asset,
+        urls: result.urls,
+        // Return the best URL for the entity field (prefer WebP full/card)
+        primaryUrl: result.urls.full || result.urls.card || result.urls.original,
+      });
+    } catch (e: any) {
+      return fail(res, e, 'POST /api/admin/images/upload');
+    }
+  });
+
+  app.delete('/api/admin/images/:id', requireAdminRole, async (req: any, res: any) => {
+    try {
+      const { id } = req.params;
+      const success = await deleteImageAsset(id);
+      if (!success) {
+        return res.status(404).json({ error: 'Image not found.' });
+      }
+      return res.json({ success: true });
+    } catch (e: any) {
+      return fail(res, e, 'DELETE /api/admin/images/:id');
+    }
+  });
+
+  app.delete('/api/admin/images/entity/:entityType/:entityId', requireAdminRole, async (req: any, res: any) => {
+    try {
+      const { entityType, entityId } = req.params;
+      const validEntityTypes = ['service', 'therapist', 'site_setting', 'hero'];
+      if (!validEntityTypes.includes(entityType)) {
+        return res.status(400).json({ error: 'Invalid entityType.' });
+      }
+      const deleted = await deleteImagesByEntity(entityType, entityId);
+      return res.json({ success: true, deleted });
+    } catch (e: any) {
+      return fail(res, e, 'DELETE /api/admin/images/entity/:entityType/:entityId');
+    }
+  });
+
+  app.get('/api/admin/images/entity/:entityType/:entityId', requireAdminRole, async (req: any, res: any) => {
+    try {
+      const { entityType, entityId } = req.params;
+      const validEntityTypes = ['service', 'therapist', 'site_setting', 'hero'];
+      if (!validEntityTypes.includes(entityType)) {
+        return res.status(400).json({ error: 'Invalid entityType.' });
+      }
+      const assets = await getImageAssetsByEntity(entityType, entityId);
+      return res.json({ success: true, assets });
+    } catch (e: any) {
+      return fail(res, e, 'GET /api/admin/images/entity/:entityType/:entityId');
     }
   });
 
@@ -1550,9 +1651,26 @@ export async function startServer() {
       }
       next();
     });
-    app.use('/uploads', express.static(path.join(process.cwd(), 'public', 'uploads')));
+    app.use('/uploads', express.static(path.join(process.cwd(), 'public', 'uploads'), {
+      maxAge: '1y',
+      immutable: true,
+      setHeaders: (res) => {
+        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      },
+    }));
     const distPath = path.join(process.cwd(), 'dist');
-    app.use(express.static(distPath));
+    app.use(express.static(distPath, {
+      maxAge: '1y',
+      immutable: true,
+      setHeaders: (res, path) => {
+        // Long-term cache for hashed assets (images, fonts, CSS, JS)
+        if (/\.(jpg|jpeg|png|webp|avif|woff2|woff|css|js|ico|svg)$/i.test(path)) {
+          res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+        } else {
+          res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
+        }
+      },
+    }));
     app.get(/.*/, (_req, res) => {
       res.sendFile(path.join(distPath, 'index.html'));
     });

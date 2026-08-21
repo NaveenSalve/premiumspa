@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Booking, Therapist, Customer, SpaService, MainTab, ContactSettings, ClientNotificationMessage, AdminNotification } from '../types';
 import {
   Bell,
@@ -41,6 +41,9 @@ import {
   Tooltip,
   ResponsiveContainer
 } from 'recharts';
+import { ThumbnailImage, CardImage } from './ResponsiveImage';
+
+const API_BASE = '/api';
 
 interface AdminViewProps {
   bookings: Booking[];
@@ -185,6 +188,38 @@ export const AdminView: React.FC<AdminViewProps> = ({
       setPinInput('');
     }
   };
+
+  // Upload image to Supabase Storage via API
+  const uploadImage = useCallback(async (
+    file: File,
+    entityType: 'service' | 'therapist' | 'site_setting' | 'hero',
+    entityId: string,
+    entityField: string,
+    imageType?: 'service' | 'therapist' | 'hero' | 'logo' | 'general'
+  ): Promise<string | null> => {
+    const formData = new FormData();
+    formData.append('image', file);
+    formData.append('entityType', entityType);
+    formData.append('entityId', entityId);
+    formData.append('entityField', entityField);
+    if (imageType) formData.append('imageType', imageType);
+    
+    try {
+      const res = await fetch(`${API_BASE}/admin/images/upload`, {
+        method: 'POST',
+        credentials: 'include',
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Upload failed');
+      }
+      return data.primaryUrl || data.urls?.full || data.urls?.card || data.urls?.original || null;
+    } catch (err) {
+      console.error('[AdminView] Image upload failed:', err);
+      return null;
+    }
+  }, []);
 
   // Client Data Automatic Synthesis & Search / Filter
   const [clientSearch, setClientSearch] = useState('');
@@ -363,31 +398,27 @@ export const AdminView: React.FC<AdminViewProps> = ({
     }
   };
 
-  const handleSettingsImageUpload = (e: React.ChangeEvent<HTMLInputElement>, setter: (value: string) => void, maxW = 1600, maxH = 1200) => {
+  const handleSettingsImageUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    setter: (value: string) => void,
+    entityField: string,
+    imageType: 'hero' | 'logo' | 'general' = 'general'
+  ) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!file.type.includes('jpeg') && !file.type.includes('jpg') && !file.type.includes('png')) {
+    if (!file.type.includes('jpeg') && !file.type.includes('jpg') && !file.type.includes('png') && !file.type.includes('webp')) {
       return;
     }
-    const reader = new FileReader();
-    reader.onload = () => {
-      const img = new Image();
-      img.onload = () => {
-        let tw = img.naturalWidth, th = img.naturalHeight;
-        if (tw > maxW || th > maxH) {
-          const scale = Math.min(maxW / tw, maxH / th);
-          tw = Math.round(tw * scale);
-          th = Math.round(th * scale);
-        }
-        const canvas = document.createElement('canvas');
-        canvas.width = tw;
-        canvas.height = th;
-        canvas.getContext('2d')!.drawImage(img, 0, 0, tw, th);
-        setter(canvas.toDataURL('image/jpeg', 0.82));
-      };
-      img.src = typeof reader.result === 'string' ? reader.result : '';
-    };
-    reader.readAsDataURL(file);
+    
+    // Show loading state
+    setter('uploading...');
+    
+    const url = await uploadImage(file, 'site_setting', 'site-settings', entityField, imageType);
+    if (url) {
+      setter(url);
+    } else {
+      setter(''); // Reset on failure
+    }
   };
 
   const handleSaveContactSettings = async (e: React.FormEvent) => {
@@ -498,6 +529,28 @@ export const AdminView: React.FC<AdminViewProps> = ({
     setSImageUrl(s.imageUrl);
     setSPopular(!!s.popular);
     setShowServiceModal(true);
+  };
+
+  // Service image file selection handler
+  const handleServiceImageFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    // Show immediate preview while uploading
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      if (typeof reader.result === 'string') {
+        setSImageUrl(reader.result);
+      }
+    };
+    reader.readAsDataURL(file);
+    
+    // Upload to Supabase Storage in background
+    const entityId = editingService?.id || `srv-${Date.now()}`;
+    const url = await uploadImage(file, 'service', entityId, 'imageUrl', 'service');
+    if (url) {
+      setSImageUrl(url);
+    }
   };
 
   const handleSaveService = (e: React.FormEvent) => {
@@ -712,17 +765,25 @@ export const AdminView: React.FC<AdminViewProps> = ({
     }
   };
 
-  // Image file selection handler
-  const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Image file selection handler - uploads to Supabase Storage
+  const handleImageFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        if (typeof reader.result === 'string') {
-          setFormAvatarUrl(reader.result);
-        }
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+    
+    // Show immediate preview while uploading
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      if (typeof reader.result === 'string') {
+        setFormAvatarUrl(reader.result);
+      }
+    };
+    reader.readAsDataURL(file);
+    
+    // Upload to Supabase Storage in background
+    const entityId = editingTherapist?.id || `th-${Date.now()}`;
+    const url = await uploadImage(file, 'therapist', entityId, 'avatarUrl', 'therapist');
+    if (url) {
+      setFormAvatarUrl(url);
     }
   };
 
@@ -1728,7 +1789,12 @@ export const AdminView: React.FC<AdminViewProps> = ({
                 <div key={t.id} className="bg-white rounded-2xl p-4 border border-[#e9e8e3] shadow-xs flex items-center justify-between gap-3">
                   <div className="flex items-center space-x-3 min-w-0">
                     <div className="w-12 h-12 rounded-full overflow-hidden bg-[#efeee8] flex-shrink-0 relative border border-[#e4e2dd]">
-                      <img src={t.avatarUrl} alt={t.name} className="w-full h-full object-cover" />
+                      <ThumbnailImage
+                        src={t.avatarUrl}
+                        alt={t.name}
+                        size={48}
+                        className="w-full h-full object-cover"
+                      />
                       <span
                         className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white ${
                           t.status === 'available' ? 'bg-[#22c55e]' : 'bg-[#9ca3af]'
@@ -2147,11 +2213,11 @@ export const AdminView: React.FC<AdminViewProps> = ({
               <div className="space-y-2">
                 <div className="flex items-center gap-3">
                   <img src={brandLogoInput} alt="Brand logo preview" className="w-16 h-16 object-contain rounded-xl border border-[#e9e8e3] bg-[#fbf9f4]" />
-                  <label className="inline-flex items-center space-x-2 px-3 py-2 bg-[#efeee8] hover:bg-[#e4e2dd] text-[#3b4b38] rounded-xl text-xs font-semibold cursor-pointer transition-colors">
-                    <Upload className="w-3.5 h-3.5" />
-                    <span>Upload JPG</span>
-                    <input type="file" accept="image/jpeg,image/jpg,image/png" className="hidden" onChange={(e) => handleSettingsImageUpload(e, setBrandLogoInput, 300, 200)} />
-                  </label>
+<label className="inline-flex items-center space-x-2 px-3 py-2 bg-[#efeee8] hover:bg-[#e4e2dd] text-[#3b4b38] rounded-xl text-xs font-semibold cursor-pointer transition-colors">
+                      <Upload className="w-3.5 h-3.5" />
+                      <span>Upload JPG</span>
+                      <input type="file" accept="image/jpeg,image/jpg,image/png,image/webp" className="hidden" onChange={(e) => handleSettingsImageUpload(e, setBrandLogoInput, 'brandLogoUrl', 'logo')} />
+                    </label>
                 </div>
                 <input
                   type="text"
@@ -2175,7 +2241,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
                     <label className="inline-flex items-center space-x-2 px-3 py-2 bg-[#efeee8] hover:bg-[#e4e2dd] text-[#3b4b38] rounded-xl text-xs font-semibold cursor-pointer transition-colors">
                       <Upload className="w-3.5 h-3.5" />
                       <span>Upload Desktop Hero</span>
-                      <input type="file" accept="image/jpeg,image/jpg,image/png" className="hidden" onChange={(e) => handleSettingsImageUpload(e, setHeroDesktopInput, 1600, 900)} />
+                      <input type="file" accept="image/jpeg,image/jpg,image/png,image/webp" className="hidden" onChange={(e) => handleSettingsImageUpload(e, setHeroDesktopInput, 'heroDesktopImageUrl', 'hero')} />
                     </label>
                   </div>
                   <input
@@ -2193,7 +2259,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
                     <label className="inline-flex items-center space-x-2 px-3 py-2 bg-[#efeee8] hover:bg-[#e4e2dd] text-[#3b4b38] rounded-xl text-xs font-semibold cursor-pointer transition-colors">
                       <Upload className="w-3.5 h-3.5" />
                       <span>Upload Laptop Hero</span>
-                      <input type="file" accept="image/jpeg,image/jpg,image/png" className="hidden" onChange={(e) => handleSettingsImageUpload(e, setHeroLaptopInput, 1400, 800)} />
+                      <input type="file" accept="image/jpeg,image/jpg,image/png,image/webp" className="hidden" onChange={(e) => handleSettingsImageUpload(e, setHeroLaptopInput, 'heroLaptopImageUrl', 'hero')} />
                     </label>
                   </div>
                   <input
@@ -2220,7 +2286,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
                     <label className="inline-flex items-center space-x-2 px-3 py-2 bg-[#efeee8] hover:bg-[#e4e2dd] text-[#3b4b38] rounded-xl text-xs font-semibold cursor-pointer transition-colors">
                       <Upload className="w-3.5 h-3.5" />
                       <span>Upload Home Service</span>
-                      <input type="file" accept="image/jpeg,image/jpg,image/png" className="hidden" onChange={(e) => handleSettingsImageUpload(e, setExperienceHomeInput, 800, 600)} />
+                      <input type="file" accept="image/jpeg,image/jpg,image/png,image/webp" className="hidden" onChange={(e) => handleSettingsImageUpload(e, setExperienceHomeInput, 'experienceHomeImageUrl', 'hero')} />
                     </label>
                   </div>
                   <input
@@ -2238,7 +2304,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
                     <label className="inline-flex items-center space-x-2 px-3 py-2 bg-[#efeee8] hover:bg-[#e4e2dd] text-[#3b4b38] rounded-xl text-xs font-semibold cursor-pointer transition-colors">
                       <Upload className="w-3.5 h-3.5" />
                       <span>Upload Hotel Service</span>
-                      <input type="file" accept="image/jpeg,image/jpg,image/png" className="hidden" onChange={(e) => handleSettingsImageUpload(e, setExperienceHotelInput, 800, 600)} />
+                      <input type="file" accept="image/jpeg,image/jpg,image/png,image/webp" className="hidden" onChange={(e) => handleSettingsImageUpload(e, setExperienceHotelInput, 'experienceHotelImageUrl', 'hero')} />
                     </label>
                   </div>
                   <input
@@ -2256,7 +2322,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
                     <label className="inline-flex items-center space-x-2 px-3 py-2 bg-[#efeee8] hover:bg-[#e4e2dd] text-[#3b4b38] rounded-xl text-xs font-semibold cursor-pointer transition-colors">
                       <Upload className="w-3.5 h-3.5" />
                       <span>Upload Book Therapist</span>
-                      <input type="file" accept="image/jpeg,image/jpg,image/png" className="hidden" onChange={(e) => handleSettingsImageUpload(e, setExperienceTherapistInput, 800, 600)} />
+                      <input type="file" accept="image/jpeg,image/jpg,image/png,image/webp" className="hidden" onChange={(e) => handleSettingsImageUpload(e, setExperienceTherapistInput, 'experienceTherapistImageUrl', 'hero')} />
                     </label>
                   </div>
                   <input
@@ -2724,14 +2790,26 @@ export const AdminView: React.FC<AdminViewProps> = ({
               {/* Image URL & Presets */}
               <div>
                 <label className="text-xs font-semibold text-[#444841] block mb-1">Service Photo Image URL</label>
-                <input
-                  type="url"
-                  required
-                  placeholder="https://..."
-                  value={sImageUrl}
-                  onChange={e => setSImageUrl(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-[#c4c8bf] text-xs focus:outline-none focus:ring-1 focus:ring-[#52634f]"
-                />
+                <div className="space-y-2">
+                  <input
+                    type="url"
+                    required
+                    placeholder="https://..."
+                    value={sImageUrl}
+                    onChange={e => setSImageUrl(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-[#c4c8bf] text-xs focus:outline-none focus:ring-1 focus:ring-[#52634f]"
+                  />
+                  <label className="inline-flex items-center space-x-2 px-3 py-2 bg-[#efeee8] hover:bg-[#e4e2dd] text-[#3b4b38] rounded-xl text-xs font-semibold cursor-pointer transition-colors">
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>Upload Image</span>
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/jpg,image/png,image/webp"
+                      onChange={handleServiceImageFileChange}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
 
                 {/* Preset image selector */}
                 <div className="mt-2 space-y-1">

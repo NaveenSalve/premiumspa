@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Therapist, SpaService, Booking, MainTab, TherapistCategory, ContactSettings } from '../types';
 import { ArrowLeft, Calendar, Clock, Home as HomeIcon, ShieldCheck, Zap, CheckCircle, Info, MapPin, Timer, Lock, UserCheck, Star, Sparkles, Check, ChevronDown, ChevronUp, MessageCircle } from 'lucide-react';
 import { buildWhatsAppBookingUrl } from '../config';
+import { ThumbnailImage, CardImage } from './ResponsiveImage';
 
 interface BookingViewProps {
   selectedTherapist: Therapist | null;
@@ -426,7 +427,12 @@ export const BookingView: React.FC<BookingViewProps> = ({
           >
             <div className="flex items-center space-x-3">
               <div className="w-11 h-11 rounded-xl overflow-hidden bg-white border border-[#c4c8bf] flex-shrink-0">
-                <img src={activeTherapist.avatarUrl} alt={activeTherapist.name} className="w-full h-full object-cover" />
+                <ThumbnailImage
+                  src={activeTherapist.avatarUrl}
+                  alt={activeTherapist.name}
+                  size={44}
+                  className="w-full h-full object-cover"
+                />
               </div>
               <div>
                 <div className="flex items-center space-x-2">
@@ -508,7 +514,12 @@ export const BookingView: React.FC<BookingViewProps> = ({
                           </span>
                         )}
                         <div className="w-12 h-12 rounded-xl overflow-hidden bg-[#efeee8] border border-[#e9e8e3] flex-shrink-0">
-                          <img src={t.avatarUrl} alt={t.name} className="w-full h-full object-cover" />
+                          <CardImage
+                            src={t.avatarUrl}
+                            alt={t.name}
+                            className="w-full h-full object-cover"
+                            aspectRatio="square"
+                          />
                         </div>
                         <div className="w-full">
                           <h4 className="font-semibold text-xs text-[#1b1c19] truncate">{t.name}</h4>

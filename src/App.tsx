@@ -263,6 +263,16 @@ export default function App() {
     }
   };
 
+  const handleClearOldData = async (): Promise<string | null> => {
+    try {
+      await api('/admin/bookings/old', { method: 'DELETE', authed: true });
+      await loadAdminData();
+      return null;
+    } catch (err: any) {
+      return err?.message || 'Failed to clear old data. Please try again.';
+    }
+  };
+
   // ---- Contact settings (DB-backed; localStorage is only an offline cache) ----
   const [contactSettings, setContactSettings] = useState<ContactSettings>(() => {
     try {
@@ -679,6 +689,7 @@ export default function App() {
                 onAdminLogin={handleAdminLogin}
                 onAdminLogout={handleAdminLogout}
                 onChangeAdminPin={handleChangeAdminPin}
+                onClearOldData={handleClearOldData}
                 pinChangeNotice={pinChangeNotice}
                 onUpdateContactSettings={handleUpdateContactSettings}
                 onMarkMessageAsRead={handleMarkMessageAsRead}

@@ -11,7 +11,7 @@ import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { db } from './src/db/index.ts';
-import { and, eq, ne, desc, asc, sql } from 'drizzle-orm';
+import { and, eq, ne, lt, desc, asc, sql } from 'drizzle-orm';
 import {
   services,
   therapists,
@@ -1085,6 +1085,21 @@ export async function createApp() {
         createdAt: b.createdAt.toISOString(),
       }));
       return res.json(formatted);
+    } catch (e: any) {
+      return fail(res, e, `${req.method} ${req.originalUrl || req.url}`);
+    }
+  });
+
+  // Permanently delete all bookings dated before today (business timezone).
+  // Today's bookings are never touched. Admin-only.
+  app.delete('/api/admin/bookings/old', requireAdminRole, async (req: any, res) => {
+    try {
+      const { dateKey } = businessNow();
+      const deleted = await db
+        .delete(bookings)
+        .where(lt(bookings.date, dateKey))
+        .returning({ id: bookings.id });
+      return res.json({ success: true, deletedCount: deleted.length, beforeDate: dateKey });
     } catch (e: any) {
       return fail(res, e, `${req.method} ${req.originalUrl || req.url}`);
     }

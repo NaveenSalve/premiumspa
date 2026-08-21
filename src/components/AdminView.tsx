@@ -58,6 +58,7 @@ interface AdminViewProps {
   onAdminLogin?: (pin: string) => Promise<string | null>;
   onAdminLogout?: () => void;
   onChangeAdminPin?: (currentPin: string, newPin: string) => Promise<string | null>;
+  onClearOldData?: () => Promise<string | null>;
   pinChangeNotice?: string | null;
   onUpdateContactSettings?: (settings: ContactSettings) => Promise<string | null> | void;
   onMarkMessageAsRead?: (id: string) => void;
@@ -147,6 +148,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
   onAdminLogin,
   onAdminLogout,
   onChangeAdminPin,
+  onClearOldData,
   pinChangeNotice,
   onUpdateContactSettings,
   onMarkMessageAsRead,
@@ -707,6 +709,29 @@ export const AdminView: React.FC<AdminViewProps> = ({
   const [showTherapistModal, setShowTherapistModal] = useState(false);
   const [editingTherapist, setEditingTherapist] = useState<Therapist | null>(null);
 
+  // Clear Old Data State
+  const [showClearDataConfirm, setShowClearDataConfirm] = useState(false);
+  const [clearingData, setClearingData] = useState(false);
+  const [clearDataNotice, setClearDataNotice] = useState<string | null>(null);
+  const [clearDataError, setClearDataError] = useState<string | null>(null);
+
+  const handleConfirmClearOldData = async () => {
+    if (!onClearOldData || clearingData) return;
+    setClearingData(true);
+    setClearDataError(null);
+    const error = await onClearOldData();
+    setClearingData(false);
+    setShowClearDataConfirm(false);
+    if (error) {
+      setClearDataNotice(null);
+      setClearDataError(error);
+    } else {
+      setClearDataError(null);
+      setClearDataNotice('Old bookings deleted successfully. Today\'s bookings are untouched.');
+      setTimeout(() => setClearDataNotice(null), 5000);
+    }
+  };
+
   // Lock body scroll while any admin modal is open
   React.useEffect(() => {
     const anyModalOpen = showTherapistModal || showServiceModal || showAddClientBookingModal;
@@ -1173,6 +1198,40 @@ export const AdminView: React.FC<AdminViewProps> = ({
               </div>
             </div>
           </div>
+
+          {/* Data Maintenance: Clear Old Data */}
+          <div className="bg-white rounded-2xl p-4 md:p-5 border border-[#e9e8e3] md:border-stone-200/80 shadow-xs md:shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="min-w-0">
+              <h3 className="font-serif text-base text-[#1b1c19] flex items-center space-x-2">
+                <Trash2 className="w-4 h-4 text-[#ba1a1a] flex-shrink-0" />
+                <span>Data Maintenance</span>
+              </h3>
+              <p className="text-[11px] text-[#747871] mt-0.5">Permanently delete all booking records before today. Today's bookings stay untouched.</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => { setClearDataNotice(null); setClearDataError(null); setShowClearDataConfirm(true); }}
+              disabled={clearingData}
+              className="px-4 py-2.5 rounded-xl bg-[#ffdad6] hover:bg-[#ffcdd0] disabled:opacity-50 disabled:cursor-not-allowed text-[#ba1a1a] text-xs font-semibold flex-shrink-0 cursor-pointer transition-colors flex items-center justify-center space-x-1.5"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Clear Old Data</span>
+            </button>
+          </div>
+
+          {clearDataNotice && (
+            <div className="p-3 bg-[#d5e8cf] border border-[#22c55e] text-[#3b4b38] rounded-2xl text-xs font-semibold flex items-center space-x-2 animate-fade-in">
+              <CheckCircle className="w-4 h-4 text-[#22c55e] flex-shrink-0" />
+              <span>{clearDataNotice}</span>
+            </div>
+          )}
+
+          {clearDataError && (
+            <div className="p-3 bg-[#ffdad6] border border-[#ba1a1a]/40 text-[#ba1a1a] text-xs font-semibold rounded-2xl flex items-center space-x-2 animate-fade-in">
+              <AlertCircle className="w-4 h-4 flex-shrink-0" />
+              <span>{clearDataError}</span>
+            </div>
+          )}
 
           {/* Change Admin PIN */}
           <div className="bg-white rounded-2xl p-4 md:p-6 border border-[#e9e8e3] md:border-stone-200/80 shadow-xs md:shadow-sm md:mt-6 space-y-4">
@@ -2419,6 +2478,47 @@ export const AdminView: React.FC<AdminViewProps> = ({
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {/* CLEAR OLD DATA CONFIRMATION MODAL */}
+      {showClearDataConfirm && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 max-w-sm w-full space-y-4 border border-[#e9e8e3] shadow-2xl">
+            <div className="w-12 h-12 rounded-full bg-[#ffdad6] text-[#ba1a1a] flex items-center justify-center mx-auto">
+              <AlertTriangle className="w-6 h-6" />
+            </div>
+
+            <div className="text-center space-y-1">
+              <h3 className="font-serif text-xl text-[#1b1c19]">Clear Old Data?</h3>
+              <p className="text-xs text-[#747871] px-2">
+                This will permanently delete all bookings before today. Continue?
+              </p>
+              <p className="text-[11px] text-[#747871] px-2 pt-1">
+                Today's bookings, revenue and all dashboard stats will update automatically.
+              </p>
+            </div>
+
+            <div className="flex items-center space-x-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowClearDataConfirm(false)}
+                disabled={clearingData}
+                className="flex-1 py-2.5 rounded-2xl text-xs font-semibold bg-[#efeee8] text-[#444841] hover:bg-[#e4e2dd] disabled:opacity-50 cursor-pointer transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmClearOldData}
+                disabled={clearingData}
+                className="flex-1 py-2.5 rounded-2xl text-xs font-semibold bg-[#ba1a1a] text-white hover:bg-[#9a1313] disabled:opacity-50 cursor-pointer transition-colors shadow-xs flex items-center justify-center space-x-1"
+              >
+                {clearingData ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                <span>{clearingData ? 'Deleting...' : 'Delete Old Data'}</span>
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

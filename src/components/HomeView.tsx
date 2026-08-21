@@ -779,10 +779,10 @@ export const HomeView: React.FC<HomeViewProps> = ({
               onSelectService(visibleServices[3] || services[0]);
               setActiveTab('booking');
             }}
-            className="bg-white border border-[#ABABAB] md:border-stone-200/80 rounded-[15px] md:rounded-2xl p-2.5 sm:p-5 md:p-0 flex flex-col justify-between items-center text-center space-y-2 sm:space-y-3.5 md:space-y-0 hover:border-[#52634F] md:hover:border-stone-200/80 hover:shadow-lg md:shadow-sm md:hover:shadow-xl md:hover:-translate-y-1 transition-all duration-300 cursor-pointer relative group md:bg-white md:overflow-hidden md:h-full w-full"
+            className="bg-white border border-[#ABABAB] md:border-stone-200/80 rounded-[15px] md:rounded-2xl p-4 sm:p-5 md:p-0 flex flex-col justify-between items-center text-center space-y-3 sm:space-y-4 md:space-y-0 hover:border-[#52634F] md:hover:border-stone-200/80 hover:shadow-lg md:shadow-sm md:hover:shadow-xl md:hover:-translate-y-1 transition-all duration-300 cursor-pointer group md:bg-white md:overflow-hidden md:h-full w-full"
           >
-            <div className="space-y-2 sm:space-y-3 w-full flex flex-col items-center md:space-y-0">
-              <div className="w-full h-[120px] sm:h-[190px] md:h-48 border border-[#C5C7C1]/30 md:border-none rounded-xl md:rounded-none overflow-hidden bg-[#efeee8] md:bg-stone-100 relative flex-shrink-0">
+            <div className="space-y-3 w-full flex flex-col items-center md:space-y-0">
+              <div className="w-full h-[160px] sm:h-[190px] md:h-48 border border-[#C5C7C1]/30 md:border-none rounded-xl md:rounded-none overflow-hidden bg-[#efeee8] md:bg-stone-100 relative flex-shrink-0">
                 <CardImage
                   src={getServiceImage('Foot')}
                   alt="Foot Reflexology"
@@ -795,17 +795,17 @@ export const HomeView: React.FC<HomeViewProps> = ({
                     e.stopPropagation();
                     toggleHomeFavorite('service-foot', e);
                   }}
-                  className="absolute top-2 right-2 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/85 backdrop-blur-xs flex items-center justify-center shadow-xs hover:bg-white hover:scale-110 transition-all z-10 cursor-pointer"
+                  className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/85 backdrop-blur-xs flex items-center justify-center shadow-xs hover:bg-white hover:scale-110 transition-all z-10 cursor-pointer"
                   aria-label="Favorite service"
                 >
-                  <Heart className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${homeFavorites['service-foot'] ? 'fill-[#e11d48] text-[#e11d48]' : 'text-[#52634F]'}`} />
+                  <Heart className={`w-4 h-4 ${homeFavorites['service-foot'] ? 'fill-[#e11d48] text-[#e11d48]' : 'text-[#52634F]'}`} />
                 </button>
               </div>
-              <div className="space-y-1 sm:space-y-2 text-center w-full md:p-4 md:pb-2 md:flex md:flex-col md:items-center md:justify-start md:flex-1">
-                <h3 className="font-sans font-medium text-[14px] sm:text-[20px] leading-tight sm:leading-[27px] text-[#1B1C19] group-hover:text-[#52634F] transition-colors md:font-serif md:text-xl md:font-medium md:text-stone-800 md:text-center">
+              <div className="space-y-1.5 sm:space-y-2 text-center w-full md:p-4 md:pb-2 md:flex md:flex-col md:items-center md:justify-start md:flex-1">
+                <h3 className="font-sans font-medium text-[18px] sm:text-[20px] leading-[24px] sm:leading-[27px] text-[#1B1C19] group-hover:text-[#52634F] transition-colors md:font-serif md:text-xl md:font-medium md:text-stone-800 md:text-center">
                   Foot Reflexology
                 </h3>
-                <p className="font-sans font-normal text-[11px] sm:text-[15px] leading-snug sm:leading-[22px] text-[#454843] md:text-stone-600 md:text-sm md:leading-relaxed md:text-center md:px-4 md:line-clamp-2">
+                <p className="font-sans font-normal text-[14px] sm:text-[15px] leading-[20px] sm:leading-[22px] text-[#454843] md:text-stone-600 md:text-sm md:leading-relaxed md:text-center md:px-4 md:line-clamp-2">
                   Reflex pressure points soothing tired feet and boosting circulation.
                 </p>
                 {/* Desktop Duration Badge */}

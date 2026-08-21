@@ -2205,7 +2205,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
               <span className="text-[10px] text-[#747871] mt-1 block">This changes the visible business name in the header and brand text.</span>
             </div>
 
-            <div>
+<div>
               <label className="text-xs font-semibold text-[#1b1c19] flex items-center space-x-1.5 mb-1">
                 <ImageIcon className="w-4 h-4 text-[#C5A059]" />
                 <span>Brand Logo (JPG / PNG / Placeholder)</span>
@@ -2213,11 +2213,11 @@ export const AdminView: React.FC<AdminViewProps> = ({
               <div className="space-y-2">
                 <div className="flex items-center gap-3">
                   <img src={brandLogoInput} alt="Brand logo preview" className="w-16 h-16 object-contain rounded-xl border border-[#e9e8e3] bg-[#fbf9f4]" />
-<label className="inline-flex items-center space-x-2 px-3 py-2 bg-[#efeee8] hover:bg-[#e4e2dd] text-[#3b4b38] rounded-xl text-xs font-semibold cursor-pointer transition-colors">
-                      <Upload className="w-3.5 h-3.5" />
-                      <span>Upload JPG</span>
-                      <input type="file" accept="image/jpeg,image/jpg,image/png,image/webp" className="hidden" onChange={(e) => handleSettingsImageUpload(e, setBrandLogoInput, 'brandLogoUrl', 'logo')} />
-                    </label>
+                  <label className="inline-flex items-center space-x-2 px-3 py-2 bg-[#efeee8] hover:bg-[#e4e2dd] text-[#3b4b38] rounded-xl text-xs font-semibold cursor-pointer transition-colors">
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>Upload JPG</span>
+                    <input type="file" accept="image/jpeg,image/jpg,image/png,image/webp" className="hidden" onChange={(e) => handleSettingsImageUpload(e, setBrandLogoInput, 'brandLogoUrl', 'logo')} />
+                  </label>
                 </div>
                 <input
                   type="text"
@@ -2226,6 +2226,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
                   placeholder="https://...logo.jpg"
                   className="w-full px-3.5 py-2.5 rounded-xl border border-[#c4c8bf] text-xs focus:outline-none focus:ring-2 focus:ring-[#52634f]"
                 />
+                <p className="text-[10px] text-[#747871] italic">📐 Recommended: Square 1:1 (e.g., 300×300px). Used in header & footer.</p>
               </div>
             </div>
 
@@ -2271,6 +2272,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
                   />
                 </div>
               </div>
+              <p className="text-[10px] text-[#747871] italic">📐 Recommended: Landscape ~16:9 (Desktop 1600×900px, Laptop 1400×788px). Full-width hero banner.</p>
             </div>
 
             <div>
@@ -2334,6 +2336,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
                   />
                 </div>
               </div>
+              <p className="text-[10px] text-[#747871] italic">📐 Recommended: Landscape 4:3 (800×600px). Used in 3-card grid on Home page.</p>
             </div>
 
             <div>
@@ -2481,6 +2484,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
                       placeholder="Or enter Image URL..."
                       className="w-full px-3 py-1.5 rounded-xl border border-[#c4c8bf] text-[11px] focus:outline-none focus:ring-1 focus:ring-[#52634f]"
                     />
+                    <p className="text-[10px] text-[#747871] italic">📐 Recommended: Square 1:1 (400×400px) or Portrait 3:4 (300×400px). Used in therapist cards.</p>
                   </div>
                 </div>
               </div>
@@ -2809,6 +2813,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
                       className="hidden"
                     />
                   </label>
+                  <p className="text-[10px] text-[#747871] italic">📐 Recommended: Landscape 4:3 (800×600px). Used in service cards grid.</p>
                 </div>
 
                 {/* Preset image selector */}

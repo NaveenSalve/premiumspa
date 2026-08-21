@@ -92,6 +92,12 @@ export const HomeView: React.FC<HomeViewProps> = ({
     setShowReviewModal(false);
   };
 
+  // Helper to get service image from database
+  const getServiceImage = (searchTerm: string) => {
+    const service = visibleServices.find(s => s.name.toLowerCase().includes(searchTerm.toLowerCase()));
+    return service?.imageUrl || 'https://images.unsplash.com/photo-1515377905703-c4788e51af15?auto=format&fit=crop&w=800&q=80';
+  };
+
   return (
     <>
       {/* Preload critical hero images */}
@@ -481,7 +487,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
               {/* Border & Image Container */}
               <div className="w-full h-[160px] sm:h-[190px] md:h-48 border border-[#C5C7C1]/30 md:border-none rounded-xl md:rounded-none overflow-hidden bg-[#efeee8] md:bg-stone-100 relative flex-shrink-0">
                 <CardImage
-                  src="https://images.unsplash.com/photo-1515377905703-c4788e51af15?auto=format&fit=crop&w=800&q=80"
+                  src={getServiceImage('Swedish')}
                   alt="Swedish Full Body Massage"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   aspectRatio="landscape"
@@ -542,7 +548,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
             <div className="space-y-3 w-full flex flex-col items-center md:space-y-0">
               <div className="w-full h-[160px] sm:h-[190px] md:h-48 border border-[#C5C7C1]/30 md:border-none rounded-xl md:rounded-none overflow-hidden bg-[#efeee8] md:bg-stone-100 relative flex-shrink-0">
                 <CardImage
-                  src={tile2Img}
+                  src={getServiceImage('Deep')}
                   alt="Deep Tissue Massage"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   aspectRatio="landscape"
@@ -601,7 +607,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
             <div className="space-y-3 w-full flex flex-col items-center md:space-y-0">
               <div className="w-full h-[160px] sm:h-[190px] md:h-48 border border-[#C5C7C1]/30 md:border-none rounded-xl md:rounded-none overflow-hidden bg-[#efeee8] md:bg-stone-100 relative flex-shrink-0">
                 <CardImage
-                  src={tile1Img}
+                  src={getServiceImage('Aroma')}
                   alt="Aromatherapy Massage"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   aspectRatio="landscape"
@@ -659,10 +665,11 @@ export const HomeView: React.FC<HomeViewProps> = ({
           >
             <div className="space-y-3 w-full flex flex-col items-center md:space-y-0">
               <div className="w-full h-[160px] sm:h-[190px] md:h-48 border border-[#C5C7C1]/30 md:border-none rounded-xl md:rounded-none overflow-hidden bg-[#efeee8] md:bg-stone-100 relative flex-shrink-0">
-                <img
-                  src="https://images.unsplash.com/photo-1519823551278-64ac92734fb1?auto=format&fit=crop&w=800&q=80"
+                <CardImage
+                  src={getServiceImage('Neck')}
                   alt="Head, Neck & Shoulder"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  aspectRatio="landscape"
                 />
                 <button
                   type="button"
@@ -718,7 +725,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
             <div className="space-y-3 w-full flex flex-col items-center md:space-y-0">
               <div className="w-full h-[160px] sm:h-[190px] md:h-48 border border-[#C5C7C1]/30 md:border-none rounded-xl md:rounded-none overflow-hidden bg-[#efeee8] md:bg-stone-100 relative flex-shrink-0">
                 <CardImage
-                  src={tile3Img}
+                  src={getServiceImage('Reiki')}
                   alt="Reiki Therapy"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   aspectRatio="landscape"
@@ -777,7 +784,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
             <div className="space-y-2 sm:space-y-3 w-full flex flex-col items-center md:space-y-0">
               <div className="w-full h-[120px] sm:h-[190px] md:h-48 border border-[#C5C7C1]/30 md:border-none rounded-xl md:rounded-none overflow-hidden bg-[#efeee8] md:bg-stone-100 relative flex-shrink-0">
                 <CardImage
-                  src={tile4Img}
+                  src={getServiceImage('Foot')}
                   alt="Foot Reflexology"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   aspectRatio="landscape"
@@ -946,31 +953,14 @@ export const HomeView: React.FC<HomeViewProps> = ({
         </div>
       </section>
 
-      {/* FRAME 578: 4-IMAGE ARCH COLLAGE - Fixed Orientation */}
+      {/* FRAME 578: 4-IMAGE ARCH COLLAGE - Layout Swapped (Left↔Right) */}
       <section className="px-4 max-w-md md:max-w-xl lg:max-w-2xl mx-auto py-2">
         <div className="relative w-full max-w-[394px] md:max-w-[480px] mx-auto h-[470px] md:h-[560px]">
-          {/* Tile 1: Top-Left - Arch radius: top-left & top-right rounded, bottom-right sharp */}
+          {/* Tile 1: Top-Left (was Top-Right) - Arch radius: top-left & top-right rounded, bottom-right sharp */}
           <div
             className="absolute w-[47%] h-[225px] md:h-[265px] left-0 top-0 overflow-hidden shadow-xs border border-[#e9e8e3]"
             style={{
               borderRadius: '9999px 9999px 0 9999px',
-            }}
-          >
-            <ResponsiveImage
-              src={tile1Img}
-              alt="Spa oils and candles"
-              width={400}
-              height={300}
-              className="w-full h-full object-cover"
-              sizes="400px"
-            />
-          </div>
-
-          {/* Tile 2: Top-Right - Arch radius: top-left & top-right rounded, bottom-left sharp */}
-          <div
-            className="absolute w-[47%] h-[225px] md:h-[265px] right-0 top-0 overflow-hidden shadow-xs border border-[#e9e8e3]"
-            style={{
-              borderRadius: '9999px 9999px 9999px 0',
             }}
           >
             <ResponsiveImage
@@ -983,16 +973,16 @@ export const HomeView: React.FC<HomeViewProps> = ({
             />
           </div>
 
-          {/* Tile 3: Bottom-Left - Arch radius: bottom-left & bottom-right rounded, top-right sharp */}
+          {/* Tile 2: Top-Right (was Top-Left) - Arch radius: top-left & top-right rounded, bottom-left sharp */}
           <div
-            className="absolute w-[47%] h-[225px] md:h-[265px] left-0 bottom-0 overflow-hidden shadow-xs border border-[#e9e8e3]"
+            className="absolute w-[47%] h-[225px] md:h-[265px] right-0 top-0 overflow-hidden shadow-xs border border-[#e9e8e3]"
             style={{
-              borderRadius: '0 9999px 9999px 9999px',
+              borderRadius: '9999px 9999px 9999px 0',
             }}
           >
             <ResponsiveImage
-              src={tile3Img}
-              alt="Herbal compress therapy"
+              src={tile1Img}
+              alt="Spa oils and candles"
               width={400}
               height={300}
               className="w-full h-full object-cover"
@@ -1000,7 +990,24 @@ export const HomeView: React.FC<HomeViewProps> = ({
             />
           </div>
 
-          {/* Tile 4: Bottom-Right - Arch radius: bottom-left & bottom-right rounded, top-left sharp */}
+          {/* Tile 3: Bottom-Left (was Bottom-Right) - Arch radius: bottom-left & bottom-right rounded, top-right sharp */}
+          <div
+            className="absolute w-[47%] h-[225px] md:h-[265px] left-0 bottom-0 overflow-hidden shadow-xs border border-[#e9e8e3]"
+            style={{
+              borderRadius: '0 9999px 9999px 9999px',
+            }}
+          >
+            <ResponsiveImage
+              src={tile4Img}
+              alt="Flower foot bath ritual"
+              width={400}
+              height={300}
+              className="w-full h-full object-cover"
+              sizes="400px"
+            />
+          </div>
+
+          {/* Tile 4: Bottom-Right (was Bottom-Left) - Arch radius: bottom-left & bottom-right rounded, top-left sharp */}
           <div
             className="absolute w-[47%] h-[225px] md:h-[265px] right-0 bottom-0 overflow-hidden shadow-xs border border-[#e9e8e3]"
             style={{
@@ -1008,8 +1015,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
             }}
           >
             <ResponsiveImage
-              src={tile4Img}
-              alt="Flower foot bath ritual"
+              src={tile3Img}
+              alt="Herbal compress therapy"
               width={400}
               height={300}
               className="w-full h-full object-cover"

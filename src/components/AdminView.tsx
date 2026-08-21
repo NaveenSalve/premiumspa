@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { Booking, Therapist, Customer, SpaService, MainTab, ContactSettings, ClientNotificationMessage, AdminNotification } from '../types';
 import {
   Bell,
@@ -705,6 +706,17 @@ export const AdminView: React.FC<AdminViewProps> = ({
   // Therapist CRUD Modal State
   const [showTherapistModal, setShowTherapistModal] = useState(false);
   const [editingTherapist, setEditingTherapist] = useState<Therapist | null>(null);
+
+  // Lock body scroll while any admin modal is open
+  React.useEffect(() => {
+    const anyModalOpen = showTherapistModal || showServiceModal || showAddClientBookingModal;
+    if (!anyModalOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [showTherapistModal, showServiceModal, showAddClientBookingModal]);
 
   // Form Fields State
   const [formName, setFormName] = useState('');
@@ -2411,22 +2423,34 @@ export const AdminView: React.FC<AdminViewProps> = ({
       )}
 
       {/* ADD / EDIT THERAPIST MODAL */}
-      {showTherapistModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl p-6 max-w-sm w-full space-y-4 border border-[#e9e8e3] shadow-2xl my-auto">
-            <div className="flex items-center justify-between border-b border-[#efeee8] pb-3">
-              <h3 className="font-serif text-xl text-[#1b1c19]">
-                {editingTherapist ? 'Edit Therapist Profile' : 'Add New Therapist'}
-              </h3>
-              <button
-                onClick={() => setShowTherapistModal(false)}
-                className="p-1 rounded-full text-[#747871] hover:text-[#1b1c19] hover:bg-[#efeee8]"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+      {showTherapistModal && typeof document !== 'undefined' && createPortal((
+        <div
+          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-stretch justify-center p-0 sm:items-center sm:p-6 animate-fade-in"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setShowTherapistModal(false)}
+        >
+          <div
+            className="bg-white w-full h-[100dvh] max-w-none rounded-none overflow-hidden border-0 shadow-2xl relative flex flex-col sm:h-auto sm:max-h-[calc(100vh-48px)] sm:max-w-[420px] sm:rounded-3xl sm:border sm:border-[#e9e8e3] md:max-w-[480px]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setShowTherapistModal(false)}
+              className="absolute top-3 right-3 sm:top-4 sm:right-4 p-2 rounded-full bg-[#efeee8] text-[#747871] hover:text-[#1b1c19] hover:bg-[#e4e2dd] transition-colors z-20 cursor-pointer"
+              aria-label="Close therapist form"
+            >
+              <X className="w-5 h-5" />
+            </button>
 
-            <form onSubmit={handleSaveTherapist} className="space-y-3 max-h-[70vh] overflow-y-auto pr-1 no-scrollbar">
+            <form onSubmit={handleSaveTherapist} className="flex flex-col min-h-0 flex-1">
+              <div className="overflow-y-auto p-4 sm:p-5 space-y-4 no-scrollbar flex-1">
+                <div className="pr-12">
+                  <h3 className="font-serif text-xl text-[#1b1c19]">
+                    {editingTherapist ? 'Edit Therapist Profile' : 'Add New Therapist'}
+                  </h3>
+                  <p className="text-xs text-[#747871] mt-0.5">Profile photo, pricing tier & duty details</p>
+                </div>
               {/* Profile Image & Upload */}
               <div>
                 <label className="text-xs font-semibold text-[#444841] block mb-1.5">Profile Photo</label>
@@ -2576,25 +2600,35 @@ export const AdminView: React.FC<AdminViewProps> = ({
                 />
               </div>
 
-              <div className="flex justify-end space-x-2 pt-3 border-t border-[#efeee8]">
-                <button
-                  type="button"
-                  onClick={() => setShowTherapistModal(false)}
-                  className="px-4 py-2 rounded-full text-xs font-semibold text-[#747871] hover:bg-[#efeee8] cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 rounded-full text-xs font-semibold bg-[#52634f] hover:bg-[#3b4b38] text-white shadow-xs cursor-pointer transition-colors"
-                >
-                  {editingTherapist ? 'Update Profile' : 'Add Therapist'}
-                </button>
+              </div>
+
+              {/* Sticky footer actions */}
+              <div className="border-t border-[#e9e8e3] bg-white/95 backdrop-blur-xs px-4 sm:px-5 py-3 flex items-center justify-between gap-3 flex-shrink-0">
+                <div>
+                  <span className="text-[10px] text-[#747871] uppercase font-bold block">SESSION RATE</span>
+                  <span className="font-serif text-xl font-bold text-[#1b1c19]">₹{formPrice.toLocaleString()}</span>
+                </div>
+                <div className="flex items-center space-x-2 flex-shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setShowTherapistModal(false)}
+                    className="px-4 py-2.5 rounded-full text-xs font-semibold text-[#747871] hover:bg-[#efeee8] cursor-pointer transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2.5 rounded-full text-xs font-semibold uppercase tracking-wider bg-[#52634f] hover:bg-[#3b4b38] text-white shadow-md cursor-pointer transition-colors flex items-center space-x-1.5"
+                  >
+                    <Save className="w-4 h-4" />
+                    <span>{editingTherapist ? 'Update Profile' : 'Add Therapist'}</span>
+                  </button>
+                </div>
               </div>
             </form>
           </div>
         </div>
-      )}
+      ), document.body)}
 
       {/* DELETE CONFIRMATION MODAL */}
       {therapistToDelete && (
@@ -2656,25 +2690,34 @@ export const AdminView: React.FC<AdminViewProps> = ({
       )}
 
       {/* SERVICE ADD / EDIT MODAL (Requirement 2) */}
-      {showServiceModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl p-6 max-w-md w-full space-y-4 border border-[#e9e8e3] my-8 shadow-2xl animate-fade-in">
-            <div className="flex items-center justify-between border-b border-[#efeee8] pb-3">
-              <div className="flex items-center space-x-2">
-                <Sparkles className="w-5 h-5 text-[#52634f]" />
-                <h3 className="font-serif text-xl text-[#1b1c19]">
-                  {editingService ? 'Edit Catalog Service' : 'Add New Spa Service'}
-                </h3>
-              </div>
-              <button
-                onClick={() => setShowServiceModal(false)}
-                className="text-[#747871] hover:text-[#1b1c19] p-1 rounded-full hover:bg-[#efeee8]"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+      {showServiceModal && typeof document !== 'undefined' && createPortal((
+        <div
+          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-stretch justify-center p-0 sm:items-center sm:p-6 animate-fade-in"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setShowServiceModal(false)}
+        >
+          <div
+            className="bg-white w-full h-[100dvh] max-w-none rounded-none overflow-hidden border-0 shadow-2xl relative flex flex-col sm:h-auto sm:max-h-[calc(100vh-48px)] sm:max-w-[420px] sm:rounded-3xl sm:border sm:border-[#e9e8e3] md:max-w-[520px]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setShowServiceModal(false)}
+              className="absolute top-3 right-3 sm:top-4 sm:right-4 p-2 rounded-full bg-[#efeee8] text-[#747871] hover:text-[#1b1c19] hover:bg-[#e4e2dd] transition-colors z-20 cursor-pointer"
+              aria-label="Close service form"
+            >
+              <X className="w-5 h-5" />
+            </button>
 
-            <form onSubmit={handleSaveService} className="space-y-3.5">
+            <form onSubmit={handleSaveService} className="flex flex-col min-h-0 flex-1">
+              <div className="overflow-y-auto p-4 sm:p-5 space-y-3.5 no-scrollbar flex-1">
+                <div className="flex items-center space-x-2 pr-12">
+                  <Sparkles className="w-5 h-5 text-[#52634f] flex-shrink-0" />
+                  <h3 className="font-serif text-xl text-[#1b1c19]">
+                    {editingService ? 'Edit Catalog Service' : 'Add New Spa Service'}
+                  </h3>
+                </div>
               {/* Service Name */}
               <div>
                 <label className="text-xs font-semibold text-[#444841] block mb-1">Service Title / Name</label>
@@ -2812,26 +2855,35 @@ export const AdminView: React.FC<AdminViewProps> = ({
                 </div>
               </div>
 
-              {/* Form Action buttons */}
-              <div className="flex justify-end space-x-2 pt-3 border-t border-[#efeee8]">
-                <button
-                  type="button"
-                  onClick={() => setShowServiceModal(false)}
-                  className="px-4 py-2 rounded-full text-xs font-semibold text-[#747871] hover:bg-[#efeee8] cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 rounded-full text-xs font-semibold bg-[#52634f] hover:bg-[#3b4b38] text-white shadow-xs cursor-pointer transition-colors"
-                >
-                  {editingService ? 'Save Changes' : 'Create Service'}
-                </button>
+              </div>
+
+              {/* Sticky footer actions */}
+              <div className="border-t border-[#e9e8e3] bg-white/95 backdrop-blur-xs px-4 sm:px-5 py-3 flex items-center justify-between gap-3 flex-shrink-0">
+                <div>
+                  <span className="text-[10px] text-[#747871] uppercase font-bold block">SESSION RATE</span>
+                  <span className="font-serif text-xl font-bold text-[#1b1c19]">₹{sPrice.toLocaleString()}</span>
+                </div>
+                <div className="flex items-center space-x-2 flex-shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setShowServiceModal(false)}
+                    className="px-4 py-2.5 rounded-full text-xs font-semibold text-[#747871] hover:bg-[#efeee8] cursor-pointer transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2.5 rounded-full text-xs font-semibold uppercase tracking-wider bg-[#52634f] hover:bg-[#3b4b38] text-white shadow-md cursor-pointer transition-colors flex items-center space-x-1.5"
+                  >
+                    <Save className="w-4 h-4" />
+                    <span>{editingService ? 'Save Changes' : 'Create Service'}</span>
+                  </button>
+                </div>
               </div>
             </form>
           </div>
         </div>
-      )}
+      ), document.body)}
 
       {/* SERVICE DELETE CONFIRMATION MODAL */}
       {serviceToDelete && (
@@ -2870,23 +2922,32 @@ export const AdminView: React.FC<AdminViewProps> = ({
       )}
 
       {/* ADD CLIENT BOOKING MODAL (Requirement 2) */}
-      {showAddClientBookingModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 space-y-5 border border-[#e9e8e3] shadow-2xl relative max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-[#efeee8] pb-3">
-              <div>
-                <h3 className="font-serif text-xl text-[#1b1c19]">Add Client Booking</h3>
-                <p className="text-xs text-[#747871]">Enter client details, select therapist (optional), service & slot</p>
-              </div>
-              <button
-                onClick={() => setShowAddClientBookingModal(false)}
-                className="p-1.5 rounded-full bg-[#efeee8] text-[#747871] hover:text-[#1b1c19] transition-colors cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+      {showAddClientBookingModal && typeof document !== 'undefined' && createPortal((
+        <div
+          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-stretch justify-center p-0 sm:items-center sm:p-6 animate-fade-in"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setShowAddClientBookingModal(false)}
+        >
+          <div
+            className="bg-white w-full h-[100dvh] max-w-none rounded-none overflow-hidden border-0 shadow-2xl relative flex flex-col sm:h-auto sm:max-h-[calc(100vh-48px)] sm:max-w-[420px] sm:rounded-3xl sm:border sm:border-[#e9e8e3] md:max-w-[520px]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setShowAddClientBookingModal(false)}
+              className="absolute top-3 right-3 sm:top-4 sm:right-4 p-2 rounded-full bg-[#efeee8] text-[#747871] hover:text-[#1b1c19] hover:bg-[#e4e2dd] transition-colors z-20 cursor-pointer"
+              aria-label="Close booking form"
+            >
+              <X className="w-5 h-5" />
+            </button>
 
-            <form onSubmit={handleAdminCreateBooking} className="space-y-4 text-left">
+            <form onSubmit={handleAdminCreateBooking} className="flex flex-col min-h-0 flex-1 text-left">
+              <div className="overflow-y-auto p-4 sm:p-5 space-y-4 no-scrollbar flex-1">
+                <div className="pr-12">
+                  <h3 className="font-serif text-xl text-[#1b1c19]">Add Client Booking</h3>
+                  <p className="text-xs text-[#747871] mt-0.5">Enter client details, select therapist (optional), service & slot</p>
+                </div>
               {/* Client Name */}
               <div>
                 <label className="text-xs font-semibold text-[#1b1c19] block mb-1">
@@ -3010,26 +3071,35 @@ export const AdminView: React.FC<AdminViewProps> = ({
                 </div>
               </div>
 
-              {/* Submit Buttons */}
-              <div className="pt-3 border-t border-[#efeee8] flex items-center justify-end space-x-3">
-                <button
-                  type="button"
-                  onClick={() => setShowAddClientBookingModal(false)}
-                  className="px-4 py-2.5 rounded-xl border border-[#c4c8bf] text-xs font-semibold text-[#747871] hover:bg-[#efeee8] cursor-pointer transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-6 py-2.5 rounded-xl bg-[#52634f] hover:bg-[#3b4b38] text-white text-xs font-semibold shadow-xs cursor-pointer transition-colors"
-                >
-                  Save Client Booking
-                </button>
+              </div>
+
+              {/* Sticky footer actions */}
+              <div className="border-t border-[#e9e8e3] bg-white/95 backdrop-blur-xs px-4 sm:px-5 py-3 flex items-center justify-between gap-3 flex-shrink-0">
+                <div>
+                  <span className="text-[10px] text-[#747871] uppercase font-bold block">TOTAL PAYABLE</span>
+                  <span className="font-serif text-xl font-bold text-[#1b1c19]">₹{bookingAmount.toLocaleString()}</span>
+                </div>
+                <div className="flex items-center space-x-2 flex-shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddClientBookingModal(false)}
+                    className="px-4 py-2.5 rounded-full text-xs font-semibold text-[#747871] hover:bg-[#efeee8] cursor-pointer transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2.5 rounded-full text-xs font-semibold uppercase tracking-wider bg-[#52634f] hover:bg-[#3b4b38] text-white shadow-md cursor-pointer transition-colors flex items-center space-x-1.5"
+                  >
+                    <CheckCircle className="w-4 h-4" />
+                    <span>Save Booking</span>
+                  </button>
+                </div>
               </div>
             </form>
           </div>
         </div>
-      )}
+      ), document.body)}
     </div>
   );
 };

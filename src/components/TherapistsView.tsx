@@ -127,7 +127,7 @@ export const TherapistsView: React.FC<TherapistsViewProps> = ({
     return (
       <div
         key={therapist.id}
-        className="w-full bg-[#F9FAF8] border border-[#C5C7C1]/30 rounded-[16px] sm:rounded-[20px] p-2.5 sm:p-4 flex flex-col justify-between gap-2 sm:gap-3 shadow-xs hover:shadow-md hover:border-[#52634F] transition-all duration-300 cursor-pointer group relative"
+        className="w-full bg-[#F9FAF8] border border-[#C5C7C1]/30 rounded-[16px] sm:rounded-[20px] p-3 sm:p-4 flex flex-col justify-between gap-3 sm:gap-4 shadow-xs hover:shadow-md hover:border-[#52634F] transition-all duration-300 cursor-pointer group relative"
         onClick={() => {
           onSelectTherapist(therapist);
           setActiveTab('booking');
@@ -153,52 +153,52 @@ export const TherapistsView: React.FC<TherapistsViewProps> = ({
         </div>
 
         {/* Info Content */}
-        <div className="space-y-0.5 sm:space-y-1 w-full text-left px-0.5">
+        <div className="space-y-1 sm:space-y-1.5 w-full text-left flex-1 flex flex-col">
           {/* Status Indicator */}
-          <div className="flex items-center gap-1 sm:gap-1.5 text-[10px] sm:text-[11px] font-medium text-[#2E7D32]">
-            <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[#2E7D32] inline-block animate-pulse" />
-            <span>Available</span>
+          <div className="flex items-center gap-1.5 text-[11px] sm:text-[12px] font-medium text-[#2E7D32]">
+            <span className="w-2 h-2 rounded-full bg-[#2E7D32] inline-block animate-pulse flex-shrink-0" />
+            <span className="truncate">Available</span>
           </div>
 
           {/* Name */}
-          <h4 className="font-sans font-bold text-[14px] sm:text-[18px] leading-snug text-[#1B1C19] capitalize truncate mt-0.5">
+          <h4 className="font-sans font-bold text-[15px] sm:text-[18px] leading-snug text-[#1B1C19] capitalize truncate">
             {therapist.name}
           </h4>
 
-          {/* Rating Row */}
-          <div className="flex items-center gap-1 text-[11px] sm:text-[12px] font-medium text-[#1B1C19]">
-            <Star className="w-3 h-3 sm:w-3.5 sm:h-3.5 fill-[#D4AF37] text-[#D4AF37]" />
+          {/* Rating Row - aligned with consistent spacing */}
+          <div className="flex items-center gap-1.5 text-[12px] sm:text-[13px] font-medium text-[#1B1C19]">
+            <Star className="w-3.5 h-3.5 fill-[#D4AF37] text-[#D4AF37] flex-shrink-0" />
             <span className="font-semibold text-[#1B1C19]">{therapist.rating}</span>
-            <span className="text-[#6B7280] text-[10px] sm:text-[11px]">({therapist.reviewsCount})</span>
+            <span className="text-[#6B7280] text-[11px] sm:text-[12px]">({therapist.reviewsCount})</span>
           </div>
 
-          {/* Bottom Info Bar */}
-          <div className="flex items-center justify-between pt-1.5 sm:pt-3 border-t border-[#e8e5dc] gap-1 mt-1.5 sm:mt-3">
-            <span className="bg-[#E8EFE6] text-[#52634F] text-[10px] sm:text-xs font-medium px-2 sm:px-3 py-0.5 sm:py-1 rounded-md truncate max-w-[75px] sm:max-w-[110px]">
+          {/* Bottom Info Bar - properly aligned */}
+          <div className="flex items-center justify-between pt-2 sm:pt-3 border-t border-[#e8e5dc] gap-2 mt-auto">
+            <span className="bg-[#E8EFE6] text-[#52634F] text-[10px] sm:text-xs font-medium px-2.5 sm:px-3 py-1 rounded-md truncate max-w-[80px] sm:max-w-[120px] flex-shrink-0">
               {therapist.specialty.split(/&|,|\+/)[0]?.trim() || 'Aromatherapy'}
             </span>
-            <span className="font-bold text-[#1B1C19] text-xs sm:text-base flex-shrink-0">
+            <span className="font-bold text-[#1B1C19] text-sm sm:text-base flex-shrink-0 whitespace-nowrap">
               ₹{therapist.price.toLocaleString()}
             </span>
           </div>
 
-          {/* Booking Action Button */}
-          <div className="pt-2 space-y-1.5" onClick={(e) => e.stopPropagation()}>
+          {/* Booking Action Button - consistent sizing */}
+          <div className="pt-1.5 space-y-2" onClick={(e) => e.stopPropagation()}>
             <button
               type="button"
               onClick={() => {
                 onSelectTherapist(therapist);
                 setActiveTab('booking');
               }}
-              className="w-full py-2 px-2.5 bg-[#52634f] hover:bg-[#3b4b38] text-white text-xs font-semibold rounded-xl flex items-center justify-center space-x-1.5 transition-colors cursor-pointer shadow-2xs"
+              className="w-full py-2.5 px-3 bg-[#52634f] hover:bg-[#3b4b38] text-white text-xs sm:text-sm font-semibold rounded-xl flex items-center justify-center space-x-2 transition-colors cursor-pointer shadow-sm"
             >
-              <UserCheck className="w-3.5 h-3.5" />
+              <UserCheck className="w-4 h-4 flex-shrink-0" />
               <span>Book Therapist</span>
             </button>
             <button
               type="button"
               onClick={() => setProfileTherapist(therapist)}
-              className="w-full text-center text-[11px] text-[#52634f] hover:text-[#1b1c19] hover:underline font-medium cursor-pointer pt-0.5"
+              className="w-full text-center text-[11px] sm:text-[12px] text-[#52634f] hover:text-[#1b1c19] hover:underline font-medium cursor-pointer pt-0.5"
             >
               View Reviews & Bio →
             </button>

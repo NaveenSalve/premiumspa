@@ -95,7 +95,7 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <>
       <header
-        className="sticky top-0 z-40 bg-white/95 backdrop-blur-md w-full h-[80px] px-5 lg:px-8 flex flex-row items-center justify-between border-b border-[#e8e5dc]/80 transition-all duration-200"
+        className="sticky top-0 z-40 bg-white w-full h-[80px] px-5 lg:px-8 flex flex-row items-center justify-between border-b border-[#e8e5dc] shadow-sm transition-all duration-200"
       >
         {/* Left: Spa Logo & Brand Name */}
         <div className="flex items-center space-x-3">

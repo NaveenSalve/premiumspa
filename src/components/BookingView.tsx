@@ -157,6 +157,17 @@ export const BookingView: React.FC<BookingViewProps> = ({
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  // Lock body scroll when confirmation modal is open
+  useEffect(() => {
+    if (confirmedBooking) {
+      const prevOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = prevOverflow;
+      };
+    }
+  }, [confirmedBooking]);
+
   // Proportional Duration Pricing Logic based on chosen Therapist's 60-min base price
   const basePrice = activeTherapist.price || activeService.price || 999;
   let servicePrice = basePrice;
@@ -921,8 +932,8 @@ export const BookingView: React.FC<BookingViewProps> = ({
 
       {/* CONFIRMATION MODAL */}
       {confirmedBooking && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 max-w-sm w-full max-h-[90vh] overflow-y-auto space-y-5 text-center shadow-xl border border-[#e9e8e3] animate-scale-up my-auto">
+        <div className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 max-w-sm w-full max-h-[90vh] overflow-y-auto space-y-5 text-center shadow-xl border border-[#e9e8e3] animate-scale-up">
             <div className="w-16 h-16 rounded-full bg-[#d5e8cf] text-[#3b4b38] flex items-center justify-center mx-auto shadow-inner">
               <CheckCircle className="w-10 h-10" />
             </div>

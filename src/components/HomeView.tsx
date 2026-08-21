@@ -946,15 +946,14 @@ export const HomeView: React.FC<HomeViewProps> = ({
         </div>
       </section>
 
-      {/* FRAME 578: 4-IMAGE ARCH COLLAGE */}
+      {/* FRAME 578: 4-IMAGE ARCH COLLAGE - Fixed Orientation */}
       <section className="px-4 max-w-md md:max-w-xl lg:max-w-2xl mx-auto py-2">
         <div className="relative w-full max-w-[394px] md:max-w-[480px] mx-auto h-[470px] md:h-[560px]">
-          {/* Tile 1: Top-Left */}
+          {/* Tile 1: Top-Left - Arch radius: top-left & top-right rounded, bottom-right sharp */}
           <div
             className="absolute w-[47%] h-[225px] md:h-[265px] left-0 top-0 overflow-hidden shadow-xs border border-[#e9e8e3]"
             style={{
-              borderRadius: '9999px 9999px 0px 9999px',
-              transform: 'rotate(-179.5deg)',
+              borderRadius: '9999px 9999px 0 9999px',
             }}
           >
             <ResponsiveImage
@@ -964,16 +963,14 @@ export const HomeView: React.FC<HomeViewProps> = ({
               height={300}
               className="w-full h-full object-cover"
               sizes="400px"
-              style={{ transform: 'rotate(-179.5deg)' }}
             />
           </div>
 
-          {/* Tile 2: Top-Right */}
+          {/* Tile 2: Top-Right - Arch radius: top-left & top-right rounded, bottom-left sharp */}
           <div
             className="absolute w-[47%] h-[225px] md:h-[265px] right-0 top-0 overflow-hidden shadow-xs border border-[#e9e8e3]"
             style={{
-              borderRadius: '9999px 9999px 0px 9999px',
-              transform: 'scaleY(-1)',
+              borderRadius: '9999px 9999px 9999px 0',
             }}
           >
             <ResponsiveImage
@@ -983,16 +980,14 @@ export const HomeView: React.FC<HomeViewProps> = ({
               height={300}
               className="w-full h-full object-cover"
               sizes="400px"
-              style={{ transform: 'scaleY(-1)' }}
             />
           </div>
 
-          {/* Tile 3: Bottom-Left */}
+          {/* Tile 3: Bottom-Left - Arch radius: bottom-left & bottom-right rounded, top-right sharp */}
           <div
             className="absolute w-[47%] h-[225px] md:h-[265px] left-0 bottom-0 overflow-hidden shadow-xs border border-[#e9e8e3]"
             style={{
-              borderRadius: '9999px 9999px 0px 9999px',
-              transform: 'scaleX(-1)',
+              borderRadius: '0 9999px 9999px 9999px',
             }}
           >
             <ResponsiveImage
@@ -1002,16 +997,14 @@ export const HomeView: React.FC<HomeViewProps> = ({
               height={300}
               className="w-full h-full object-cover"
               sizes="400px"
-              style={{ transform: 'scaleX(-1)' }}
             />
           </div>
 
-          {/* Tile 4: Bottom-Right */}
+          {/* Tile 4: Bottom-Right - Arch radius: bottom-left & bottom-right rounded, top-left sharp */}
           <div
             className="absolute w-[47%] h-[225px] md:h-[265px] right-0 bottom-0 overflow-hidden shadow-xs border border-[#e9e8e3]"
             style={{
-              borderRadius: '9999px 9999px 0px 9999px',
-              transform: 'rotate(0.04deg)',
+              borderRadius: '9999px 0 9999px 9999px',
             }}
           >
             <ResponsiveImage

@@ -953,75 +953,58 @@ export const HomeView: React.FC<HomeViewProps> = ({
         </div>
       </section>
 
-      {/* FRAME 578: 4-IMAGE ARCH COLLAGE - Layout Swapped (Left↔Right) */}
-      <section className="px-4 max-w-md md:max-w-xl lg:max-w-2xl mx-auto py-2">
-        <div className="relative w-full max-w-[394px] md:max-w-[480px] mx-auto h-[470px] md:h-[560px]">
-          {/* Tile 1: Top-Left (was Top-Right) - Arch radius: top-left & top-right rounded, bottom-right sharp */}
-          <div
-            className="absolute w-[47%] h-[225px] md:h-[265px] left-0 top-0 overflow-hidden shadow-xs border border-[#e9e8e3]"
-            style={{
-              borderRadius: '9999px 9999px 0 9999px',
-            }}
-          >
-            <ResponsiveImage
-              src={tile2Img}
-              alt="Relaxing back massage"
-              width={400}
-              height={300}
-              className="w-full h-full object-cover"
-              sizes="400px"
-            />
-          </div>
+      {/* FRAME 578: 4-IMAGE ARCH COLLAGE (Figma-exact layout) */}
+      <section className="flex w-full max-w-[411px] h-[490.47px] flex-row items-center justify-center px-5 pt-5 mx-auto box-border">
+        <div className="flex w-[394px] max-w-full h-[470.47px] flex-col items-center justify-center p-0 gap-[99px]">
+          {/* Image Group - scales proportionally below 411px via aspect-ratio */}
+          <div className="relative w-[373.78px] max-w-full aspect-[373.78/470.47]">
+            {/* Image 1: Top-Left */}
+            <div className="absolute w-[47.0566%] h-[49.8501%] left-[2.7048%] top-[0.2296%] rounded-[9999px_9999px_0_9999px] rotate-[-179.5deg] overflow-hidden">
+              <ResponsiveImage
+                src={tile2Img}
+                alt="Relaxing back massage"
+                width={400}
+                height={300}
+                className="w-full h-full object-cover block rotate-[179.5deg]"
+                sizes="400px"
+              />
+            </div>
 
-          {/* Tile 2: Top-Right (was Top-Left) - Arch radius: top-left & top-right rounded, bottom-left sharp */}
-          <div
-            className="absolute w-[47%] h-[225px] md:h-[265px] right-0 top-0 overflow-hidden shadow-xs border border-[#e9e8e3]"
-            style={{
-              borderRadius: '9999px 9999px 9999px 0',
-            }}
-          >
-            <ResponsiveImage
-              src={tile1Img}
-              alt="Spa oils and candles"
-              width={400}
-              height={300}
-              className="w-full h-full object-cover"
-              sizes="400px"
-            />
-          </div>
+            {/* Image 2: Top-Right */}
+            <div className="absolute w-[46.6425%] h-[49.4137%] left-[55.7838%] top-0 rounded-[9999px_9999px_0_9999px] scale-y-[-1] overflow-hidden">
+              <ResponsiveImage
+                src={tile1Img}
+                alt="Spa oils and candles"
+                width={400}
+                height={300}
+                className="w-full h-full object-cover block scale-y-[-1]"
+                sizes="400px"
+              />
+            </div>
 
-          {/* Tile 3: Bottom-Left (was Bottom-Right) - Arch radius: bottom-left & bottom-right rounded, top-right sharp */}
-          <div
-            className="absolute w-[47%] h-[225px] md:h-[265px] left-0 bottom-0 overflow-hidden shadow-xs border border-[#e9e8e3]"
-            style={{
-              borderRadius: '0 9999px 9999px 9999px',
-            }}
-          >
-            <ResponsiveImage
-              src={tile4Img}
-              alt="Flower foot bath ritual"
-              width={400}
-              height={300}
-              className="w-full h-full object-cover"
-              sizes="400px"
-            />
-          </div>
+            {/* Image 3: Bottom-Left */}
+            <div className="absolute w-[46.9611%] h-[49.7518%] left-[2.7182%] top-[50.2296%] rounded-[9999px_9999px_0_9999px] scale-x-[-1] overflow-hidden">
+              <ResponsiveImage
+                src={tile4Img}
+                alt="Flower foot bath ritual"
+                width={400}
+                height={300}
+                className="w-full h-full object-cover block scale-x-[-1]"
+                sizes="400px"
+              />
+            </div>
 
-          {/* Tile 4: Bottom-Right (was Bottom-Left) - Arch radius: bottom-left & bottom-right rounded, top-left sharp */}
-          <div
-            className="absolute w-[47%] h-[225px] md:h-[265px] right-0 bottom-0 overflow-hidden shadow-xs border border-[#e9e8e3]"
-            style={{
-              borderRadius: '9999px 0 9999px 9999px',
-            }}
-          >
-            <ResponsiveImage
-              src={tile3Img}
-              alt="Herbal compress therapy"
-              width={400}
-              height={300}
-              className="w-full h-full object-cover"
-              sizes="400px"
-            />
+            {/* Image 4: Bottom-Right */}
+            <div className="absolute w-[46.6812%] h-[49.4524%] left-[55.9472%] top-[50.3848%] rounded-[9999px_9999px_0_9999px] rotate-[0.04deg] overflow-hidden">
+              <ResponsiveImage
+                src={tile3Img}
+                alt="Herbal compress therapy"
+                width={400}
+                height={300}
+                className="w-full h-full object-cover block"
+                sizes="400px"
+              />
+            </div>
           </div>
         </div>
       </section>

@@ -1146,55 +1146,91 @@ export const AdminView: React.FC<AdminViewProps> = ({
               </div>
             </div>
 
-            {/* Card 4: Monthly Revenue */}
+            {/* Card 4: Today's Revenue */}
             <div className="bg-white rounded-2xl p-4 md:p-5 border border-[#e9e8e3] md:border-stone-200/80 shadow-xs md:shadow-sm md:hover:shadow-md md:hover:-translate-y-0.5 transition-all duration-300 space-y-2">
               <div className="w-8 h-8 rounded-xl bg-[#52634f] text-white flex items-center justify-center font-bold">
                 <DollarSign className="w-4 h-4" />
               </div>
               <div>
                 <span className="text-[10px] uppercase font-bold text-[#747871] tracking-wider block">
-                  MONTHLY REVENUE
+                  TODAY'S REVENUE
                 </span>
-                <span className="font-serif text-xl text-[#1b1c19] font-normal block">₹12,450</span>
+                <span className="font-serif text-xl text-[#1b1c19] font-normal block">
+                  ₹{bookings.filter(b => b.status !== 'Cancelled').reduce((sum, b) => sum + (b.totalPayable || 0), 0)}
+                </span>
               </div>
             </div>
           </div>
 
-          {/* Revenue Analytics Chart */}
+          {/* Change Admin PIN */}
           <div className="bg-white rounded-2xl p-4 md:p-6 border border-[#e9e8e3] md:border-stone-200/80 shadow-xs md:shadow-sm md:mt-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-semibold text-base text-[#1b1c19]">Revenue Analytics</h3>
-              <div className="flex items-center space-x-1 text-xs text-[#747871] bg-[#efeee8] px-2.5 py-1 rounded-full cursor-pointer">
-                <span>This Week</span>
-                <ChevronDown className="w-3.5 h-3.5" />
-              </div>
+            <div>
+              <h3 className="font-serif text-lg text-[#1b1c19] flex items-center space-x-2">
+                <Lock className="w-4 h-4 text-[#52634f]" />
+                <span>Change Admin PIN</span>
+              </h3>
+              <p className="text-[11px] text-[#747871]">You will be signed out after changing and must log in again with the new PIN. New PIN must be at least 12 characters spanning at least three of: lowercase, uppercase, digits, symbols.</p>
             </div>
 
-            <div className="h-44 md:h-56 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={REVENUE_DATA} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#52634f" stopOpacity={0.4} />
-                      <stop offset="95%" stopColor="#d5e8cf" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <XAxis dataKey="name" tickLine={false} axisLine={false} tick={{ fontSize: 10, fill: '#747871' }} />
-                  <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 10, fill: '#747871' }} />
-                  <Tooltip
-                    contentStyle={{ backgroundColor: '#ffffff', borderRadius: '12px', border: '1px solid #e9e8e3', fontSize: '12px' }}
-                    formatter={(val: any) => [`₹${val}`, 'Revenue']}
-                  />
-                  <Area type="monotone" dataKey="revenue" stroke="#52634f" strokeWidth={2.5} fillOpacity={1} fill="url(#colorRevenue)" />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
+            {pinSavedToast && (
+              <div className="p-3 bg-[#d5e8cf] border border-[#22c55e] text-[#3b4b38] rounded-2xl text-xs font-semibold flex items-center space-x-2 animate-bounce">
+                <Check className="w-4 h-4 text-[#22c55e]" />
+                <span>PIN changed successfully! You will be redirected to sign in again.</span>
+              </div>
+            )}
+
+            {pinError && (
+              <div className="p-3 bg-[#ffdad6] border border-[#ba1a1a]/40 text-[#ba1a1a] text-xs font-semibold rounded-2xl flex items-center space-x-2">
+                <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                <span>{pinError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleChangePin} className="space-y-3">
+              <div>
+                <label className="text-[11px] font-semibold text-[#444841] block mb-1.5">Current PIN</label>
+                <input
+                  type="password"
+                  value={currentPinInput}
+                  onChange={(e) => { setCurrentPinInput(e.target.value); if (pinError) setPinError(null); }}
+                  placeholder="Enter current admin PIN"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-[#c4c8bf] text-xs font-mono focus:outline-none focus:ring-2 focus:ring-[#52634f]"
+                />
+              </div>
+              <div>
+                <label className="text-[11px] font-semibold text-[#444841] block mb-1.5">New PIN</label>
+                <input
+                  type="password"
+                  value={newPinInput}
+                  onChange={(e) => { setNewPinInput(e.target.value); if (pinError) setPinError(null); }}
+                  placeholder="Min 12 characters, 3+ character types"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-[#c4c8bf] text-xs font-mono focus:outline-none focus:ring-2 focus:ring-[#52634f]"
+                />
+              </div>
+              <div>
+                <label className="text-[11px] font-semibold text-[#444841] block mb-1.5">Confirm New PIN</label>
+                <input
+                  type="password"
+                  value={confirmPinInput}
+                  onChange={(e) => { setConfirmPinInput(e.target.value); if (pinError) setPinError(null); }}
+                  placeholder="Re-enter new PIN"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-[#c4c8bf] text-xs font-mono focus:outline-none focus:ring-2 focus:ring-[#52634f]"
+                />
+              </div>
+              <div className="pt-1 flex justify-end">
+                <button
+                  type="submit"
+                  disabled={pinSaving || !currentPinInput.trim() || !newPinInput.trim() || !confirmPinInput.trim()}
+                  className="px-6 py-2.5 bg-[#52634f] hover:bg-[#3b4b38] disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-semibold rounded-full shadow-xs transition-colors flex items-center space-x-2 cursor-pointer"
+                >
+                  {pinSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lock className="w-4 h-4" />}
+                  <span>{pinSaving ? 'Updating...' : 'Update PIN'}</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
-      )}
-
-      {/* 2. BOOKINGS SUB-VIEW */}
-      {adminSubTab === 'bookings' && (
+      )}{adminSubTab === 'bookings' && (
         <div className="space-y-4 px-1 sm:px-0 animate-fade-in">
           {/* Top Header Card with Add Client Booking Button */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-[#e9e8e3] shadow-xs">
@@ -2373,74 +2409,6 @@ export const AdminView: React.FC<AdminViewProps> = ({
           </form>
         </div>
       )}
-
-      {/* CHANGE ADMIN PIN CARD */}
-      <div className="bg-white rounded-3xl border border-[#e9e8e3] p-6 space-y-4 shadow-xs">
-        <div>
-          <h3 className="font-serif text-lg text-[#1b1c19] flex items-center space-x-2">
-            <Lock className="w-4 h-4 text-[#52634f]" />
-            <span>Change Admin PIN</span>
-          </h3>
-          <p className="text-[11px] text-[#747871]">You will be signed out after changing and must log in again with the new PIN. New PIN must be at least 12 characters spanning at least three of: lowercase, uppercase, digits, symbols.</p>
-        </div>
-
-        {pinSavedToast && (
-          <div className="p-3 bg-[#d5e8cf] border border-[#22c55e] text-[#3b4b38] rounded-2xl text-xs font-semibold flex items-center space-x-2 animate-bounce">
-            <Check className="w-4 h-4 text-[#22c55e]" />
-            <span>PIN changed successfully! You will be redirected to sign in again.</span>
-          </div>
-        )}
-
-        {pinError && (
-          <div className="p-3 bg-[#ffdad6] border border-[#ba1a1a]/40 text-[#ba1a1a] text-xs font-semibold rounded-2xl flex items-center space-x-2">
-            <AlertCircle className="w-4 h-4 flex-shrink-0" />
-            <span>{pinError}</span>
-          </div>
-        )}
-
-        <form onSubmit={handleChangePin} className="space-y-3">
-          <div>
-            <label className="text-[11px] font-semibold text-[#444841] block mb-1.5">Current PIN</label>
-            <input
-              type="password"
-              value={currentPinInput}
-              onChange={(e) => { setCurrentPinInput(e.target.value); if (pinError) setPinError(null); }}
-              placeholder="Enter current admin PIN"
-              className="w-full px-3.5 py-2.5 rounded-xl border border-[#c4c8bf] text-xs font-mono focus:outline-none focus:ring-2 focus:ring-[#52634f]"
-            />
-          </div>
-          <div>
-            <label className="text-[11px] font-semibold text-[#444841] block mb-1.5">New PIN</label>
-            <input
-              type="password"
-              value={newPinInput}
-              onChange={(e) => { setNewPinInput(e.target.value); if (pinError) setPinError(null); }}
-              placeholder="Min 12 characters, 3+ character types"
-              className="w-full px-3.5 py-2.5 rounded-xl border border-[#c4c8bf] text-xs font-mono focus:outline-none focus:ring-2 focus:ring-[#52634f]"
-            />
-          </div>
-          <div>
-            <label className="text-[11px] font-semibold text-[#444841] block mb-1.5">Confirm New PIN</label>
-            <input
-              type="password"
-              value={confirmPinInput}
-              onChange={(e) => { setConfirmPinInput(e.target.value); if (pinError) setPinError(null); }}
-              placeholder="Re-enter new PIN"
-              className="w-full px-3.5 py-2.5 rounded-xl border border-[#c4c8bf] text-xs font-mono focus:outline-none focus:ring-2 focus:ring-[#52634f]"
-            />
-          </div>
-          <div className="pt-1 flex justify-end">
-            <button
-              type="submit"
-              disabled={pinSaving || !currentPinInput.trim() || !newPinInput.trim() || !confirmPinInput.trim()}
-              className="px-6 py-2.5 bg-[#52634f] hover:bg-[#3b4b38] disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-semibold rounded-full shadow-xs transition-colors flex items-center space-x-2 cursor-pointer"
-            >
-              {pinSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lock className="w-4 h-4" />}
-              <span>{pinSaving ? 'Updating...' : 'Update PIN'}</span>
-            </button>
-          </div>
-        </form>
-      </div>
 
       {/* ADD / EDIT THERAPIST MODAL */}
       {showTherapistModal && (

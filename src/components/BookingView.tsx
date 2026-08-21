@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Therapist, SpaService, Booking, MainTab, TherapistCategory, ContactSettings } from '../types';
-import { ArrowLeft, Calendar, Clock, Home as HomeIcon, ShieldCheck, Zap, CheckCircle, Info, MapPin, Timer, Lock, UserCheck, Star, Sparkles, Check, ChevronDown, ChevronUp, MessageCircle } from 'lucide-react';
+import { ArrowLeft, Calendar, Clock, Home as HomeIcon, ShieldCheck, Zap, CheckCircle, Info, MapPin, Timer, Lock, UserCheck, Star, Sparkles, Check, ChevronDown, ChevronUp, MessageCircle, X } from 'lucide-react';
 import { buildWhatsAppBookingUrl } from '../config';
 import { ThumbnailImage, CardImage } from './ResponsiveImage';
 
@@ -931,63 +932,76 @@ export const BookingView: React.FC<BookingViewProps> = ({
       </form>
 
       {/* CONFIRMATION MODAL */}
-      {confirmedBooking && (
-        <div className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 max-w-sm w-full max-h-[90vh] overflow-y-auto space-y-5 text-center shadow-xl border border-[#e9e8e3] animate-scale-up">
-            <div className="w-16 h-16 rounded-full bg-[#d5e8cf] text-[#3b4b38] flex items-center justify-center mx-auto shadow-inner">
-              <CheckCircle className="w-10 h-10" />
-            </div>
+      {confirmedBooking && typeof document !== 'undefined' && createPortal((
+        <div
+          className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-xs flex items-stretch justify-center p-0 sm:items-center sm:p-6 animate-fade-in"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="booking-confirmation-title"
+          onClick={() => setConfirmedBooking(null)}
+        >
+          <div
+            className="bg-white w-full h-[100dvh] max-w-none rounded-none overflow-hidden border-0 shadow-2xl relative flex flex-col sm:h-auto sm:max-h-[calc(100vh-48px)] sm:max-w-[420px] sm:rounded-3xl sm:border sm:border-[#e9e8e3] md:max-w-[520px]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close Button */}
+            <button
+              type="button"
+              onClick={() => setConfirmedBooking(null)}
+              className="absolute top-3 right-3 sm:top-4 sm:right-4 p-2 rounded-full bg-[#efeee8] text-[#747871] hover:text-[#1b1c19] hover:bg-[#e4e2dd] transition-colors z-20 cursor-pointer"
+              aria-label="Close booking confirmation"
+            >
+              <X className="w-5 h-5" />
+            </button>
 
-            <div className="space-y-1">
-              <span className="text-[10px] uppercase font-bold tracking-widest text-[#b45309]">
-                BOOKING REQUESTED
-              </span>
-              <h3 className="font-serif text-2xl text-[#1b1c19]">Appointment Request Received</h3>
-              <p className="text-xs text-[#747871]">
-                Booking Reference: <span className="font-bold text-[#1b1c19]">{confirmedBooking.id}</span>
-              </p>
-            </div>
+            {/* Scrollable content */}
+            <div className="overflow-y-auto p-4 sm:p-5 space-y-5 no-scrollbar flex-1">
+              {/* Success Header */}
+              <div className="text-center space-y-2 pt-2">
+                <div className="w-16 h-16 rounded-full bg-[#d5e8cf] text-[#3b4b38] flex items-center justify-center mx-auto shadow-inner">
+                  <CheckCircle className="w-10 h-10" />
+                </div>
+                <div className="space-y-1">
+                  <span className="text-[10px] uppercase font-bold tracking-widest text-[#b45309]">
+                    BOOKING REQUESTED
+                  </span>
+                  <h3 id="booking-confirmation-title" className="font-serif text-2xl text-[#1b1c19]">Appointment Request Received</h3>
+                  <p className="text-xs text-[#747871]">
+                    Booking Reference: <span className="font-bold text-[#1b1c19]">{confirmedBooking.id}</span>
+                  </p>
+                </div>
+              </div>
 
-            <div className="bg-[#fbf9f4] p-3.5 rounded-2xl border border-[#e4e2dd] text-left text-xs space-y-1.5">
-              <div className="flex justify-between">
-                <span className="text-[#747871]">Therapist:</span>
-                <span className="font-semibold text-[#1b1c19]">{confirmedBooking.therapistName}</span>
+              {/* Booking Details */}
+              <div className="bg-[#fbf9f4] p-3.5 rounded-2xl border border-[#e4e2dd] text-left text-xs space-y-1.5">
+                <div className="flex justify-between">
+                  <span className="text-[#747871]">Therapist:</span>
+                  <span className="font-semibold text-[#1b1c19]">{confirmedBooking.therapistName}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[#747871]">Treatment:</span>
+                  <span className="font-semibold text-[#1b1c19]">{confirmedBooking.serviceName} ({confirmedBooking.duration})</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[#747871]">Date & Time:</span>
+                  <span className="font-semibold text-[#1b1c19]">{confirmedBooking.date}, {confirmedBooking.time}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[#747871]">Treatment Rate:</span>
+                  <span className="font-semibold text-[#1b1c19]">₹{confirmedBooking.servicePrice.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between text-[11px]">
+                  <span className="text-[#747871]">Therapist Travel Fee:</span>
+                  <span className="font-bold text-[#22c55e]">+ ₹200 (Fixed Extra)</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[#747871]">Total Booking Amount:</span>
+                  <span className="font-bold text-[#1b1c19]">₹{confirmedBooking.totalPayable.toLocaleString()}</span>
+                </div>
+                <p className="text-[10px] leading-relaxed text-[#747871] pt-1">
+                  Your booking request is recorded. We will confirm availability and share advance payment instructions on WhatsApp/phone shortly.
+                </p>
               </div>
-              <div className="flex justify-between">
-                <span className="text-[#747871]">Treatment:</span>
-                <span className="font-semibold text-[#1b1c19]">{confirmedBooking.serviceName} ({confirmedBooking.duration})</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-[#747871]">Date & Time:</span>
-                <span className="font-semibold text-[#1b1c19]">{confirmedBooking.date}, {confirmedBooking.time}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-[#747871]">Treatment Rate:</span>
-                <span className="font-semibold text-[#1b1c19]">₹{confirmedBooking.servicePrice.toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between text-[11px]">
-                <span className="text-[#747871]">Therapist Travel Fee:</span>
-                <span className="font-bold text-[#22c55e]">+ ₹200 (Fixed Extra)</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-[#747871]">Total Booking Amount:</span>
-                <span className="font-bold text-[#1b1c19]">₹{confirmedBooking.totalPayable.toLocaleString()}</span>
-              </div>
-              <p className="text-[10px] leading-relaxed text-[#747871] pt-1">
-                Your booking request is recorded. We will confirm availability and share advance payment instructions on WhatsApp/phone shortly.
-              </p>
-            </div>
-
-            <div className="space-y-2 pt-2">
-              <a
-                href={buildWhatsAppBookingUrl(confirmedBooking, contactSettings.whatsappNumber)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full py-2.5 bg-[#25D366] hover:bg-[#1fb958] text-white rounded-full text-xs font-bold uppercase tracking-wider shadow-sm cursor-pointer flex items-center justify-center space-x-2"
-              >
-                <MessageCircle className="w-4 h-4" />
-                <span>Send Booking on WhatsApp</span>
-              </a>
 
               <button
                 type="button"
@@ -995,14 +1009,33 @@ export const BookingView: React.FC<BookingViewProps> = ({
                   setConfirmedBooking(null);
                   setActiveTab('home');
                 }}
-                className="w-full py-2.5 bg-[#efeee8] hover:bg-[#e4e2dd] text-[#444841] rounded-full text-xs font-semibold uppercase tracking-wider cursor-pointer"
+                className="w-full py-2.5 bg-[#efeee8] hover:bg-[#e4e2dd] text-[#444841] rounded-full text-xs font-semibold uppercase tracking-wider cursor-pointer transition-colors"
               >
                 Return to Home
               </button>
             </div>
+
+            {/* Sticky Footer CTA */}
+            <div className="border-t border-[#e9e8e3] bg-white/95 backdrop-blur-xs px-4 sm:px-5 py-3 flex items-center justify-between gap-3 flex-shrink-0">
+              <div>
+                <span className="text-[10px] text-[#747871] uppercase font-bold block">TOTAL PAYABLE</span>
+                <span className="font-serif text-xl font-bold text-[#1b1c19]">
+                  ₹{confirmedBooking.totalPayable.toLocaleString()}
+                </span>
+              </div>
+              <a
+                href={buildWhatsAppBookingUrl(confirmedBooking, contactSettings.whatsappNumber)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-5 sm:px-6 py-3 bg-[#25D366] hover:bg-[#1fb958] text-white rounded-full text-xs font-bold uppercase tracking-wider shadow-md cursor-pointer flex-shrink-0 flex items-center space-x-2 transition-colors"
+              >
+                <MessageCircle className="w-4 h-4" />
+                <span>WhatsApp</span>
+              </a>
+            </div>
           </div>
         </div>
-      )}
+      ), document.body)}
     </div>
   );
 };

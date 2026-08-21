@@ -1579,7 +1579,7 @@ export async function startServer() {
   return app;
 }
 
-if (!process.env.NETLIFY) {
+if (!process.env.NETLIFY && !process.env.VERCEL) {
   startServer().catch((e) => {
     console.error('[boot] FATAL: server failed to start:', e);
     process.exit(1);

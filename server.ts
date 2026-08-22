@@ -29,6 +29,8 @@ import {
   INITIAL_THERAPISTS,
 } from './src/data/mockData.ts';
 import { uploadAndProcessImage, deleteImageAsset, deleteImagesByEntity, getImageAssetsByEntity } from './src/lib/image-service.ts';
+import { supabase } from './src/lib/supabase.ts';
+import sharp from 'sharp';
 
 dotenv.config();
 
@@ -642,6 +644,10 @@ export async function createApp() {
 
   app.get('/api/settings', async (_req, res) => {
     try {
+      // Public, non-sensitive payload: short-lived shared/browser caching is
+      // safe here and lets repeat visits paint instantly (admin + authed
+      // endpoints keep the global no-store policy).
+      res.setHeader('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
       return res.json(await getPublicSettings());
     } catch (e: any) {
       return fail(res, e, 'GET /api/settings');
@@ -669,10 +675,14 @@ export async function createApp() {
           return res.status(400).json({ error: `Setting "${camel}" must be a non-empty string.` });
         }
         const value = raw.trim();
-        if (value.length > def.maxLen) {
+        // Guard: materialize base64 data URLs (logo/hero images) to Supabase
+        // BEFORE the maxLen check — a data URL would always exceed it.
+        const materialized = await materializeDataUrl(value, 'site_setting', camel, camel);
+        const finalValue = materialized || value;
+        if (finalValue.length > def.maxLen) {
           return res.status(400).json({ error: `Setting "${camel}" is too long (max ${def.maxLen} characters).` });
         }
-        updates.push({ key: def.dbKey, value });
+        updates.push({ key: def.dbKey, value: finalValue });
       }
       const now = new Date();
       for (const u of updates) {
@@ -832,6 +842,7 @@ export async function createApp() {
   // Services Endpoints
   app.get('/api/services', async (req, res) => {
     try {
+      res.setHeader('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
       const page = pageArgs(req);
       const allServices = await db.select().from(services).limit(page.limit).offset(page.offset);
       const formatted = allServices.map(s => ({
@@ -861,6 +872,9 @@ export async function createApp() {
       if (!Number.isFinite(Number(data.price)) || Number(data.price) < 0) {
         return res.status(400).json({ error: 'Invalid service price.' });
       }
+      // Guard: never persist base64 data URLs — upload them to Supabase first.
+      let svcImage = data.imageUrl || data.image || 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=800&q=80';
+      svcImage = (await materializeDataUrl(svcImage, 'service', id, 'imageUrl')) || svcImage;
       const newService = {
         id,
         name: data.name.trim(),
@@ -868,7 +882,7 @@ export async function createApp() {
         description: (data.description || 'Premium spa & home wellness service, delivered to your door.').toString().slice(0, 500),
         price: Math.round(Number(data.price)),
         duration: (data.duration || '1H').toString().slice(0, 10),
-        image: data.imageUrl || data.image || 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=800&q=80',
+        image: svcImage,
         popular: !!data.popular,
         visible: data.visible !== false,
       };
@@ -894,7 +908,11 @@ export async function createApp() {
       }
       if (data.duration !== undefined) updateData.duration = data.duration;
       if (data.category !== undefined) updateData.category = data.category;
-      if (data.imageUrl !== undefined || data.image !== undefined) updateData.image = data.imageUrl || data.image;
+      if (data.imageUrl !== undefined || data.image !== undefined) {
+        // Guard: materialize base64 data URLs to Supabase before persisting.
+        const rawImage = data.imageUrl || data.image;
+        updateData.image = (await materializeDataUrl(rawImage, 'service', id, 'imageUrl')) || rawImage;
+      }
       if (data.visible !== undefined) updateData.visible = data.visible;
       if (data.popular !== undefined) updateData.popular = data.popular;
       updateData.updatedAt = new Date();
@@ -938,6 +956,7 @@ export async function createApp() {
   // append to the end instead of reshuffling the featured set.
   app.get('/api/therapists', async (req, res) => {
     try {
+      res.setHeader('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
       const page = pageArgs(req);
       const allTherapists = await db
         .select()
@@ -975,6 +994,9 @@ export async function createApp() {
         return res.status(400).json({ error: 'Therapist name is required.' });
       }
       const id = data.id || `th-${crypto.randomUUID()}`;
+      // Guard: never persist base64 data URLs — upload them to Supabase first.
+      let thImage = data.avatarUrl || data.image || 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80';
+      thImage = (await materializeDataUrl(thImage, 'therapist', id, 'avatarUrl')) || thImage;
       const newTherapist = {
         id,
         name: data.name.trim(),
@@ -984,7 +1006,7 @@ export async function createApp() {
         experience: `${data.experienceYears || 4} Years`,
         specialties: data.specialty || 'Full Body Massage',
         bio: data.bio || 'Professional certified therapist.',
-        image: data.avatarUrl || data.image || 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80',
+        image: thImage,
         availability: data.status === 'available' || data.availability !== false,
         status: 'Active',
       };
@@ -1018,7 +1040,11 @@ export async function createApp() {
       }
       if (data.bio !== undefined) updateData.bio = data.bio;
       if (data.specialty !== undefined) updateData.specialties = data.specialty;
-      if (data.avatarUrl !== undefined || data.image !== undefined) updateData.image = data.avatarUrl || data.image;
+      if (data.avatarUrl !== undefined || data.image !== undefined) {
+        // Guard: materialize base64 data URLs to Supabase before persisting.
+        const rawImage = data.avatarUrl || data.image;
+        updateData.image = (await materializeDataUrl(rawImage, 'therapist', id, 'avatarUrl')) || rawImage;
+      }
       if (data.availability !== undefined) updateData.availability = data.availability;
       if (data.status !== undefined) updateData.availability = data.status === 'available';
       if (data.rating !== undefined) updateData.rating = String(data.rating);
@@ -1639,6 +1665,113 @@ export async function createApp() {
   return app;
 }
 
+// ---- Performance: base64 data-URL image materialization ----
+// The admin panel used to keep a data-URL preview in its form state and could
+// persist it, storing 250KB+ base64 photos inside DB text columns. That made
+// GET /api/therapists return multi-megabyte JSON (~6s TTFB on Railway) and
+// re-download every photo on each page load. These helpers decode any data URL
+// back through the normal Supabase upload pipeline and swap in a real file URL.
+const DATA_URL_RE = /^data:image\/(png|jpe?g|webp|avif|gif);base64,([A-Za-z0-9+/=]+)$/i;
+// Tiny data URLs (<8KB) are harmless placeholders; anything bigger is a real
+// photo that must not live inside the database.
+const DATA_URL_MIGRATE_MIN_BYTES = 8 * 1024;
+// Fallback destination when Supabase is not configured (served by the existing
+// /uploads static handler). NOTE: on ephemeral hosts (Railway default) these
+// files are wiped on redeploy — configure SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY
+// for durable storage.
+const UPLOAD_FALLBACK_DIR = path.join(process.cwd(), 'public', 'uploads', 'db-images');
+
+async function writeDataUrlFallback(buffer: Buffer, entityId: string, entityField: string): Promise<string | null> {
+  try {
+    fs.mkdirSync(UPLOAD_FALLBACK_DIR, { recursive: true });
+    // Compress to a card-sized WebP so migrated photos stay lightweight.
+    const compressed = await sharp(buffer)
+      .resize(800, 800, { fit: 'inside', withoutEnlargement: true })
+      .webp({ quality: 82 })
+      .toBuffer();
+    const name = `${entityId}-${entityField}-${crypto.randomBytes(4).toString('hex')}.webp`;
+    fs.writeFileSync(path.join(UPLOAD_FALLBACK_DIR, name), compressed);
+    console.log(`[images] wrote ${name} (${Math.round(compressed.length / 1024)}KB) to local uploads fallback`);
+    return `/uploads/db-images/${name}`;
+  } catch (e: any) {
+    console.error('[images] local uploads fallback failed:', e?.message || e);
+    return null;
+  }
+}
+
+async function materializeDataUrl(
+  value: unknown,
+  entityType: 'service' | 'therapist' | 'site_setting' | 'hero',
+  entityId: string,
+  entityField: string
+): Promise<string | null> {
+  if (typeof value !== 'string') return null;
+  const m = DATA_URL_RE.exec(value.trim());
+  if (!m) return null;
+  try {
+    const buffer = Buffer.from(m[2], 'base64');
+    if (buffer.length < DATA_URL_MIGRATE_MIN_BYTES) return null;
+    if (!supabase) {
+      // No object storage configured — persist as a compressed file instead of
+      // leaving megabytes of base64 inside the database.
+      return await writeDataUrlFallback(buffer, entityId, entityField);
+    }
+    const subtype = m[1].toLowerCase();
+    const ext = subtype === 'jpeg' ? 'jpg' : subtype;
+    const result = await uploadAndProcessImage({
+      file: buffer,
+      originalName: `${entityId}-${entityField}.${ext}`,
+      mimeType: `image/${subtype}`,
+      entityType,
+      entityId,
+      entityField,
+    });
+    const url = result.urls.full || result.urls.card || result.urls.original;
+    if (url) console.log(`[images] materialized data-url ${entityType}/${entityId}.${entityField} (${Math.round(buffer.length / 1024)}KB) -> ${url}`);
+    return url || null;
+  } catch (e: any) {
+    console.error(`[images] failed to materialize data-url for ${entityType}/${entityId}.${entityField}:`, e?.message || e);
+    return null;
+  }
+}
+
+// One-time-per-boot sweep: converts any legacy base64 photos already sitting in
+// the database into Supabase-hosted files. Idempotent — rows without data URLs
+// are left untouched, so it is safe to run on every boot.
+async function migrateDataUrlImages() {
+  let migrated = 0;
+  const thRows = await db.select({ id: therapists.id, image: therapists.image }).from(therapists);
+  for (const row of thRows) {
+    if (!row.image) continue;
+    const url = await materializeDataUrl(row.image, 'therapist', row.id, 'avatarUrl');
+    if (url) {
+      await db.update(therapists).set({ image: url, updatedAt: new Date() }).where(eq(therapists.id, row.id));
+      migrated++;
+    }
+  }
+  const svRows = await db.select({ id: services.id, image: services.image }).from(services);
+  for (const row of svRows) {
+    if (!row.image) continue;
+    const url = await materializeDataUrl(row.image, 'service', row.id, 'imageUrl');
+    if (url) {
+      await db.update(services).set({ image: url, updatedAt: new Date() }).where(eq(services.id, row.id));
+      migrated++;
+    }
+  }
+  const settingRows = await db.select({ key: siteSettings.key, value: siteSettings.value }).from(siteSettings);
+  for (const row of settingRows) {
+    const url = await materializeDataUrl(row.value, 'site_setting', row.key, row.key);
+    if (url) {
+      const now = new Date();
+      await db.insert(siteSettings)
+        .values({ key: row.key, value: url, updatedAt: now })
+        .onConflictDoUpdate({ target: siteSettings.key, set: { value: url, updatedAt: now } });
+      migrated++;
+    }
+  }
+  if (migrated > 0) console.log(`[images] data-url migration complete: ${migrated} image(s) moved out of the database`);
+}
+
 export async function startServer() {
   const app = await createApp();
 
@@ -1706,6 +1839,10 @@ export async function startServer() {
 
       await seedInitialData().catch((e) => {
         console.error('[boot] seedInitialData failed (non-fatal):', e);
+      });
+
+      await migrateDataUrlImages().catch((e) => {
+        console.error('[boot] migrateDataUrlImages failed (non-fatal):', e);
       });
     })();
   });

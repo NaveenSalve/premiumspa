@@ -508,6 +508,9 @@ export const AdminView: React.FC<AdminViewProps> = ({
   const [sPrice, setSPrice] = useState(2999);
   const [sDescription, setSDescription] = useState('');
   const [sImageUrl, setSImageUrl] = useState('https://images.unsplash.com/photo-1515377905703-c4788e51af15?auto=format&fit=crop&w=800&q=80');
+  // While an image upload is in flight the form must not be submittable — this
+  // guarantees a base64 data-URL preview can never be persisted to the DB.
+  const [isUploadingServiceImage, setIsUploadingServiceImage] = useState(false);
   const [sPopular, setSPopular] = useState(false);
 
   const handleOpenAddServiceModal = () => {
@@ -538,8 +541,9 @@ export const AdminView: React.FC<AdminViewProps> = ({
   const handleServiceImageFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    
+
     // Show immediate preview while uploading
+    const previousUrl = sImageUrl;
     const reader = new FileReader();
     reader.onloadend = () => {
       if (typeof reader.result === 'string') {
@@ -547,12 +551,19 @@ export const AdminView: React.FC<AdminViewProps> = ({
       }
     };
     reader.readAsDataURL(file);
-    
-    // Upload to Supabase Storage in background
-    const entityId = editingService?.id || `srv-${Date.now()}`;
-    const url = await uploadImage(file, 'service', entityId, 'imageUrl', 'service');
-    if (url) {
-      setSImageUrl(url);
+
+    setIsUploadingServiceImage(true);
+    try {
+      // Upload to Supabase Storage in background
+      const entityId = editingService?.id || `srv-${Date.now()}`;
+      const url = await uploadImage(file, 'service', entityId, 'imageUrl', 'service');
+      if (url) {
+        setSImageUrl(url);
+      } else {
+        setSImageUrl(previousUrl); // never leave a data URL in the submit path
+      }
+    } finally {
+      setIsUploadingServiceImage(false);
     }
   };
 
@@ -751,6 +762,9 @@ export const AdminView: React.FC<AdminViewProps> = ({
   const [formSpecialty, setFormSpecialty] = useState('Full Body Spa & Wellness');
   const [formStatus, setFormStatus] = useState<'available' | 'off_duty'>('available');
   const [formAvatarUrl, setFormAvatarUrl] = useState('https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=400&q=80');
+  // While an image upload is in flight the form must not be submittable — this
+  // guarantees a base64 data-URL preview can never be persisted to the DB.
+  const [isUploadingTherapistImage, setIsUploadingTherapistImage] = useState(false);
   const [formBio, setFormBio] = useState('Professional certified home spa specialist in Indore.');
   const [formLanguage, setFormLanguage] = useState('English, Hindi');
   const [formVerified, setFormVerified] = useState(true);
@@ -806,8 +820,9 @@ export const AdminView: React.FC<AdminViewProps> = ({
   const handleImageFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    
+
     // Show immediate preview while uploading
+    const previousUrl = formAvatarUrl;
     const reader = new FileReader();
     reader.onloadend = () => {
       if (typeof reader.result === 'string') {
@@ -815,12 +830,19 @@ export const AdminView: React.FC<AdminViewProps> = ({
       }
     };
     reader.readAsDataURL(file);
-    
-    // Upload to Supabase Storage in background
-    const entityId = editingTherapist?.id || `th-${Date.now()}`;
-    const url = await uploadImage(file, 'therapist', entityId, 'avatarUrl', 'therapist');
-    if (url) {
-      setFormAvatarUrl(url);
+
+    setIsUploadingTherapistImage(true);
+    try {
+      // Upload to Supabase Storage in background
+      const entityId = editingTherapist?.id || `th-${Date.now()}`;
+      const url = await uploadImage(file, 'therapist', entityId, 'avatarUrl', 'therapist');
+      if (url) {
+        setFormAvatarUrl(url);
+      } else {
+        setFormAvatarUrl(previousUrl); // never leave a data URL in the submit path
+      }
+    } finally {
+      setIsUploadingTherapistImage(false);
     }
   };
 
@@ -2718,10 +2740,11 @@ export const AdminView: React.FC<AdminViewProps> = ({
                   </button>
                   <button
                     type="submit"
-                    className="px-5 py-2.5 rounded-full text-xs font-semibold uppercase tracking-wider bg-[#52634f] hover:bg-[#3b4b38] text-white shadow-md cursor-pointer transition-colors flex items-center space-x-1.5"
+                    disabled={isUploadingTherapistImage}
+                    className="px-5 py-2.5 rounded-full text-xs font-semibold uppercase tracking-wider bg-[#52634f] hover:bg-[#3b4b38] text-white shadow-md cursor-pointer transition-colors flex items-center space-x-1.5 disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     <Save className="w-4 h-4" />
-                    <span>{editingTherapist ? 'Update Profile' : 'Add Therapist'}</span>
+                    <span>{isUploadingTherapistImage ? 'Uploading image…' : editingTherapist ? 'Update Profile' : 'Add Therapist'}</span>
                   </button>
                 </div>
               </div>
@@ -2973,10 +2996,11 @@ export const AdminView: React.FC<AdminViewProps> = ({
                   </button>
                   <button
                     type="submit"
-                    className="px-5 py-2.5 rounded-full text-xs font-semibold uppercase tracking-wider bg-[#52634f] hover:bg-[#3b4b38] text-white shadow-md cursor-pointer transition-colors flex items-center space-x-1.5"
+                    disabled={isUploadingServiceImage}
+                    className="px-5 py-2.5 rounded-full text-xs font-semibold uppercase tracking-wider bg-[#52634f] hover:bg-[#3b4b38] text-white shadow-md cursor-pointer transition-colors flex items-center space-x-1.5 disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     <Save className="w-4 h-4" />
-                    <span>{editingService ? 'Save Changes' : 'Create Service'}</span>
+                    <span>{isUploadingServiceImage ? 'Uploading image…' : editingService ? 'Save Changes' : 'Create Service'}</span>
                   </button>
                 </div>
               </div>

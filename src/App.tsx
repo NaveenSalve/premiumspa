@@ -72,6 +72,70 @@ async function fetchAllAdminPages(path: string): Promise<any[]> {
   return all;
 }
 
+// ---- Performance: instant paint + pre-mount API prefetch ----
+// The public catalog (services/therapists/settings) changes rarely, so the last
+// known response is cached in localStorage and painted on the very first render
+// instead of mock placeholders. The API requests themselves are kicked off at
+// module-eval time — BEFORE React mounts — removing one waterfall stage.
+const CATALOG_CACHE_KEY = 'spa_catalog_cache';
+
+function readCatalogCache(): { services?: SpaService[]; therapists?: Therapist[] } {
+  try {
+    const raw = localStorage.getItem(CATALOG_CACHE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as { services?: SpaService[]; therapists?: Therapist[] };
+    const out: { services?: SpaService[]; therapists?: Therapist[] } = {};
+    if (Array.isArray(parsed.services)) out.services = parsed.services;
+    if (Array.isArray(parsed.therapists)) out.therapists = parsed.therapists;
+    return out;
+  } catch {
+    return {};
+  }
+}
+
+let catalogPrefetch: Promise<[SpaService[], Therapist[], Record<string, string>]> | null = null;
+
+function fetchCatalog(): Promise<[SpaService[], Therapist[], Record<string, string>]> {
+  return Promise.all([
+    api<SpaService[]>('/services'),
+    api<Therapist[]>('/therapists'),
+    api<Record<string, string>>('/settings'),
+  ]);
+}
+
+function primeCatalogFetch() {
+  if (typeof window === 'undefined' || catalogPrefetch) return;
+  catalogPrefetch = fetchCatalog();
+  // Attach a no-op handler so a failed prefetch never surfaces as an
+  // unhandled rejection while it waits to be consumed by <App />.
+  catalogPrefetch.catch(() => {});
+}
+
+// Preload the hero/logo URLs from the settings cache synchronously at script
+// eval time — before React renders — so the browser starts downloading the
+// LCP image alongside the JS bundle instead of after mount + API round-trip.
+function preloadCachedHeroAssets() {
+  if (typeof document === 'undefined') return;
+  try {
+    const saved = JSON.parse(localStorage.getItem('spa_contact_settings') || 'null') as Partial<ContactSettings> | null;
+    for (const url of [saved?.heroDesktopImageUrl, saved?.brandLogoUrl]) {
+      if (typeof url === 'string' && /^https?:\/\//i.test(url) && !document.querySelector(`link[rel="preload"][href="${url}"]`)) {
+        const link = document.createElement('link');
+        link.rel = 'preload';
+        link.as = 'image';
+        link.href = url;
+        link.setAttribute('fetchpriority', 'high');
+        document.head.appendChild(link);
+      }
+    }
+  } catch {
+    // ignore
+  }
+}
+
+primeCatalogFetch();
+preloadCachedHeroAssets();
+
 const getInitialTab = (): MainTab => {
   if (typeof window !== 'undefined') {
     const path = window.location.pathname.toLowerCase();
@@ -86,8 +150,11 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<MainTab>(getInitialTab);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  const [services, setServices] = useState<SpaService[]>(INITIAL_SERVICES);
-  const [therapists, setTherapists] = useState<Therapist[]>(INITIAL_THERAPISTS);
+  // Initial paint uses the last-known DB catalog from localStorage (instant),
+  // falling back to static defaults on a first-ever visit. The API response
+  // below always overrides this.
+  const [services, setServices] = useState<SpaService[]>(() => readCatalogCache().services || INITIAL_SERVICES);
+  const [therapists, setTherapists] = useState<Therapist[]>(() => readCatalogCache().therapists || INITIAL_THERAPISTS);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [clientMessages, setClientMessages] = useState<ClientNotificationMessage[]>([]);
@@ -130,19 +197,25 @@ export default function App() {
   }, [activeTab]);
 
   // Load public catalog (services + therapists + site settings) from the API.
-  // Site settings are the DB-backed source of truth; the localStorage cache only
-  // provides instant first paint and is always overridden by this response.
+  // Consumes the module-level prefetch on the first call (the requests started
+  // at script-eval time), then falls back to issuing fresh requests. The
+  // localStorage caches only provide instant first paint and are always
+  // overridden by this response.
   const loadCatalog = useCallback(async () => {
     if (isCatalogPollInFlight.current) return;
     isCatalogPollInFlight.current = true;
     try {
-      const [srv, th, settings] = await Promise.all([
-        api<SpaService[]>('/services'),
-        api<Therapist[]>('/therapists'),
-        api<Record<string, string>>('/settings'),
-      ]);
+      let p = catalogPrefetch;
+      catalogPrefetch = null;
+      if (!p) p = fetchCatalog();
+      const [srv, th, settings] = await p;
       setServices(srv);
       setTherapists(th);
+      try {
+        localStorage.setItem(CATALOG_CACHE_KEY, JSON.stringify({ services: srv, therapists: th }));
+      } catch {
+        // ignore quota/security errors
+      }
       if (settings) {
         setContactSettings(prev => ({ ...DEFAULT_CONTACT_SETTINGS, ...prev, ...settings }));
         try {
